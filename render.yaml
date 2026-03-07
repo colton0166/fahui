@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name:清明慎終追遠法會報名表
+    env: node
+    buildCommand: npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: RAGIC_API_KEY
+        sync: false
+    autoDeploy: true
