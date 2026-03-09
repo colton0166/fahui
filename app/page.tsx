@@ -22,6 +22,7 @@ interface BabySpiritEntry {
   address: string;
   sameAsResidence: boolean;
   recommenderName: string;
+  sameAsMainName: boolean;
 }
 const GENDER_OPTIONS = ["信士", "信女"];
 const YES_NO = ["是", "否"];
@@ -313,7 +314,7 @@ export default function FormPage() {
       const newEntries: BabySpiritEntry[] = [];
       for (let i = 0; i < count; i++) {
         newEntries.push(
-          prev[i] || { name: "", address: "", sameAsResidence: false, recommenderName: "" }
+          prev[i] || { name: "", address: "", sameAsResidence: false, recommenderName: "", sameAsMainName: false }
         );
       }
       return newEntries;
@@ -334,7 +335,7 @@ export default function FormPage() {
       const newEntries: BabySpiritEntry[] = [];
       for (let i = 0; i < count; i++) {
         newEntries.push(
-          prev[i] || { name: "", address: "", sameAsResidence: false, recommenderName: "" }
+          prev[i] || { name: "", address: "", sameAsResidence: false, recommenderName: "", sameAsMainName: false }
         );
       }
       return newEntries;
@@ -355,7 +356,7 @@ export default function FormPage() {
       const newEntries: BabySpiritEntry[] = [];
       for (let i = 0; i < count; i++) {
         newEntries.push(
-          prev[i] || { name: "", address: "", sameAsResidence: false, recommenderName: "" }
+          prev[i] || { name: "", address: "", sameAsResidence: false, recommenderName: "", sameAsMainName: false }
         );
       }
       return newEntries;
@@ -983,17 +984,25 @@ export default function FormPage() {
                           placeholder="請輸入求薦者姓名"
                           className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm shadow-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-200 focus:outline-none transition"
                         />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const updated = [...babySpiritEntries];
-                            updated[idx] = { ...updated[idx], recommenderName: name };
-                            setBabySpiritEntries(updated);
-                          }}
-                          className="mt-1 text-xs text-amber-600 hover:text-amber-800 underline"
-                        >
-                          帶入基本資料姓名
-                        </button>
+                        <label className="inline-flex items-center gap-2 mt-2 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={entry.sameAsMainName}
+                            onChange={(e) => {
+                              const updated = [...babySpiritEntries];
+                              updated[idx] = {
+                                ...updated[idx],
+                                sameAsMainName: e.target.checked,
+                                recommenderName: e.target.checked ? name : "",
+                              };
+                              setBabySpiritEntries(updated);
+                            }}
+                            className="h-4 w-4 rounded border-gray-300 text-amber-500 focus:ring-amber-400"
+                          />
+                          <span className="text-sm text-gray-600">
+                            與基本資料姓名相同
+                          </span>
+                        </label>
                       </div>
                     </div>
                   </div>
@@ -1159,17 +1168,25 @@ export default function FormPage() {
                           placeholder="請輸入求薦者姓名"
                           className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm shadow-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-200 focus:outline-none transition"
                         />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const updated = [...karmicCreditorEntries];
-                            updated[idx] = { ...updated[idx], recommenderName: name };
-                            setKarmicCreditorEntries(updated);
-                          }}
-                          className="mt-1 text-xs text-amber-600 hover:text-amber-800 underline"
-                        >
-                          帶入基本資料姓名
-                        </button>
+                        <label className="inline-flex items-center gap-2 mt-2 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={entry.sameAsMainName}
+                            onChange={(e) => {
+                              const updated = [...karmicCreditorEntries];
+                              updated[idx] = {
+                                ...updated[idx],
+                                sameAsMainName: e.target.checked,
+                                recommenderName: e.target.checked ? name : "",
+                              };
+                              setKarmicCreditorEntries(updated);
+                            }}
+                            className="h-4 w-4 rounded border-gray-300 text-amber-500 focus:ring-amber-400"
+                          />
+                          <span className="text-sm text-gray-600">
+                            與基本資料姓名相同
+                          </span>
+                        </label>
                       </div>
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-1">
