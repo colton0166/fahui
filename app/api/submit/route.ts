@@ -75,6 +75,20 @@ export async function POST(request: NextRequest) {
       ragicData["_subtable_1003351"] = subtable;
     }
 
+    // 冤親債主牌位子表格（負數 row ID）
+    if (body.karmicCreditorEntries && body.karmicCreditorEntries.length > 0) {
+      const subtable: Record<string, Record<string, string>> = {};
+      body.karmicCreditorEntries.forEach(
+        (entry: { name: string; address: string }, idx: number) => {
+          subtable[String(-(idx + 1))] = {
+            "1003385": entry.name || "",
+            "1003386": entry.address || "",
+          };
+        }
+      );
+      ragicData["_subtable_1003387"] = subtable;
+    }
+
     console.log("[Ragic Submit] body:", JSON.stringify(ragicData, null, 2));
 
     const response = await fetch(RAGIC_URL, {

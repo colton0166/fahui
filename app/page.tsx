@@ -195,10 +195,13 @@ export default function FormPage() {
   const [babySpiritCount, setBabySpiritCount] = useState("");
   const [babySpiritEntries, setBabySpiritEntries] = useState<BabySpiritEntry[]>([]);
 
-  const [ancestorCount, setAncestorCount] = useState("1");
-  const [ancestorEntries, setAncestorEntries] = useState<BabySpiritEntry[]>([
-    { name: "", address: "", sameAsResidence: false },
-  ]);
+  const [wantsAncestor, setWantsAncestor] = useState("");
+  const [ancestorCount, setAncestorCount] = useState("");
+  const [ancestorEntries, setAncestorEntries] = useState<BabySpiritEntry[]>([]);
+
+  const [wantsKarmicCreditor, setWantsKarmicCreditor] = useState("");
+  const [karmicCreditorCount, setKarmicCreditorCount] = useState("");
+  const [karmicCreditorEntries, setKarmicCreditorEntries] = useState<BabySpiritEntry[]>([]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitResult, setSubmitResult] = useState<{
@@ -317,8 +320,16 @@ export default function FormPage() {
   }, [babySpiritCount]);
 
   useEffect(() => {
-    const count = parseInt(ancestorCount) || 1;
+    if (wantsAncestor === "否") {
+      setAncestorCount("");
+      setAncestorEntries([]);
+    }
+  }, [wantsAncestor]);
+
+  useEffect(() => {
+    const count = parseInt(ancestorCount) || 0;
     setAncestorEntries((prev) => {
+      if (count === 0) return [];
       const newEntries: BabySpiritEntry[] = [];
       for (let i = 0; i < count; i++) {
         newEntries.push(
@@ -328,6 +339,27 @@ export default function FormPage() {
       return newEntries;
     });
   }, [ancestorCount]);
+
+  useEffect(() => {
+    if (wantsKarmicCreditor === "否") {
+      setKarmicCreditorCount("");
+      setKarmicCreditorEntries([]);
+    }
+  }, [wantsKarmicCreditor]);
+
+  useEffect(() => {
+    const count = parseInt(karmicCreditorCount) || 0;
+    setKarmicCreditorEntries((prev) => {
+      if (count === 0) return [];
+      const newEntries: BabySpiritEntry[] = [];
+      for (let i = 0; i < count; i++) {
+        newEntries.push(
+          prev[i] || { name: "", address: "", sameAsResidence: false }
+        );
+      }
+      return newEntries;
+    });
+  }, [karmicCreditorCount]);
 
   // Adjust day if exceeds max
   useEffect(() => {
@@ -355,8 +387,9 @@ export default function FormPage() {
     : "";
 
   const babySpiritTotal = wantsBabySpirit === "是" ? babySpiritEntries.length : 0;
-  const ancestorTotal = ancestorEntries.length;
-  const totalAmount = 1800 + babySpiritTotal * 1800 + Math.max(0, ancestorTotal - 1) * 1800;
+  const ancestorTotal = wantsAncestor === "是" ? ancestorEntries.length : 0;
+  const karmicCreditorTotal = wantsKarmicCreditor === "是" ? karmicCreditorEntries.length : 0;
+  const totalAmount = 1800 + babySpiritTotal * 1800 + ancestorTotal * 1800 + karmicCreditorTotal * 1800;
   const ganZhiDisplay = lunarData?.gan_zhi_year || "";
   const lunarYearChineseDisplay = lunarData?.lunar_year || "";
   const zodiacDisplay = lunarData?.zodiac || "";
@@ -379,7 +412,18 @@ export default function FormPage() {
     }
     if (!wantsEmail) errs.push("請選擇是否要收到資料郵件");
     if (wantsEmail === "是" && !email.trim()) errs.push("請輸入 Email");
+    // 三個子表格至少要選一個
     if (!wantsBabySpirit) errs.push("請選擇是否要增購嬰靈牌位");
+    if (!wantsAncestor) errs.push("請選擇是否要增購祖先牌位");
+    if (!wantsKarmicCreditor) errs.push("請選擇是否要增購冤親債主牌位");
+    if (
+      wantsBabySpirit === "否" &&
+      wantsAncestor === "否" &&
+      wantsKarmicCreditor === "否"
+    ) {
+      errs.push("嬰靈牌位、祖先牌位、冤親債主牌位至少需選擇一項參加");
+    }
+    // 嬰靈牌位驗證
     if (wantsBabySpirit === "是") {
       if (!babySpiritCount) errs.push("請選擇嬰靈牌位數量");
       babySpiritEntries.forEach((entry, i) => {
@@ -395,17 +439,37 @@ export default function FormPage() {
         }
       });
     }
-    ancestorEntries.forEach((entry, i) => {
-      const trimmedName = entry.name.trim();
-      if (!trimmedName) {
-        errs.push(`祖先牌位第 ${i + 1} 筆：請輸入祖先牌位名稱`);
-      } else if (INVALID_SPIRIT_NAMES.some((inv) => inv.toLowerCase() === trimmedName.toLowerCase())) {
-        errs.push(`祖先牌位第 ${i + 1} 筆：祖先牌位名稱不可填寫「${trimmedName}」`);
-      }
-      if (!entry.address.trim()) {
-        errs.push(`祖先牌位第 ${i + 1} 筆：請輸入牌位地址`);
-      }
-    });
+    // 祖先牌位驗證
+    if (wantsAncestor === "是") {
+      if (!ancestorCount) errs.push("請選擇祖先牌位數量");
+      ancestorEntries.forEach((entry, i) => {
+        const trimmedName = entry.name.trim();
+        if (!trimmedName) {
+          errs.push(`祖先牌位第 ${i + 1} 筆：請輸入祖先牌位名稱`);
+        } else if (INVALID_SPIRIT_NAMES.some((inv) => inv.toLowerCase() === trimmedName.toLowerCase())) {
+          errs.push(`祖先牌位第 ${i + 1} 筆：祖先牌位名稱不可填寫「${trimmedName}」`);
+        }
+        if (!entry.address.trim()) {
+          errs.push(`祖先牌位第 ${i + 1} 筆：請輸入牌位地址`);
+        }
+      });
+    }
+    // 冤親債主牌位驗證
+    if (wantsKarmicCreditor === "是") {
+      if (!karmicCreditorCount) errs.push("請選擇冤親債主牌位數量");
+      karmicCreditorEntries.forEach((entry, i) => {
+        const trimmedName = entry.name.trim();
+        if (
+          trimmedName &&
+          INVALID_SPIRIT_NAMES.some((inv) => inv.toLowerCase() === trimmedName.toLowerCase())
+        ) {
+          errs.push(`冤親債主第 ${i + 1} 筆：姓名不可填寫「${trimmedName}」`);
+        }
+        if (!entry.address.trim()) {
+          errs.push(`冤親債主第 ${i + 1} 筆：請輸入地址`);
+        }
+      });
+    }
     return errs;
   }
 
@@ -460,10 +524,15 @@ export default function FormPage() {
             address: e.address,
           })) : [],
           // 祖先牌位子表格
-          ancestorEntries: ancestorEntries.map((e) => ({
+          ancestorEntries: wantsAncestor === "是" ? ancestorEntries.map((e) => ({
             name: e.name,
             address: e.address,
-          })),
+          })) : [],
+          // 冤親債主子表格
+          karmicCreditorEntries: wantsKarmicCreditor === "是" ? karmicCreditorEntries.map((e) => ({
+            name: e.name,
+            address: e.address,
+          })) : [],
           // 金額
           totalAmount: String(totalAmount),
         }),
@@ -912,15 +981,24 @@ export default function FormPage() {
             <SectionTitle title="祖先牌位" />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <SelectField
-                label="祖先牌位數量（至少1組）"
-                value={ancestorCount}
-                onChange={setAncestorCount}
-                options={BABY_SPIRIT_COUNT_OPTIONS}
+                label="是否要增購祖先牌位？"
+                value={wantsAncestor}
+                onChange={setWantsAncestor}
+                options={YES_NO}
                 required
               />
+              {wantsAncestor === "是" && (
+                <SelectField
+                  label="請選擇祖先牌位數量"
+                  value={ancestorCount}
+                  onChange={setAncestorCount}
+                  options={BABY_SPIRIT_COUNT_OPTIONS}
+                  required
+                />
+              )}
             </div>
 
-            {ancestorEntries.length > 0 && (
+            {wantsAncestor === "是" && ancestorEntries.length > 0 && (
               <div className="mt-6 space-y-4">
                 {ancestorEntries.map((entry, idx) => (
                   <div
@@ -1006,6 +1084,104 @@ export default function FormPage() {
             )}
           </div>
 
+          {/* ===== 冤親債主牌位 ===== */}
+          <div className="bg-white rounded-2xl shadow-md p-6 mb-6">
+            <SectionTitle title="冤親債主牌位" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <SelectField
+                label="是否要增購冤親債主牌位？"
+                value={wantsKarmicCreditor}
+                onChange={setWantsKarmicCreditor}
+                options={YES_NO}
+                required
+              />
+              {wantsKarmicCreditor === "是" && (
+                <SelectField
+                  label="請選擇冤親債主牌位數量"
+                  value={karmicCreditorCount}
+                  onChange={setKarmicCreditorCount}
+                  options={BABY_SPIRIT_COUNT_OPTIONS}
+                  required
+                />
+              )}
+            </div>
+
+            {wantsKarmicCreditor === "是" && karmicCreditorEntries.length > 0 && (
+              <div className="mt-6 space-y-4">
+                {karmicCreditorEntries.map((entry, idx) => (
+                  <div
+                    key={idx}
+                    className="border border-amber-200 rounded-xl p-4 bg-amber-50/30"
+                  >
+                    <p className="text-sm font-bold text-amber-800 mb-3">
+                      第 {idx + 1} 筆
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-1">
+                          冤親債主牌位姓名
+                        </label>
+                        <input
+                          type="text"
+                          value={entry.name}
+                          onChange={(e) => {
+                            const updated = [...karmicCreditorEntries];
+                            updated[idx] = { ...updated[idx], name: e.target.value };
+                            setKarmicCreditorEntries(updated);
+                          }}
+                          placeholder="請輸入姓名（可留白）"
+                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm shadow-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-200 focus:outline-none transition"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-1">
+                          居住地址
+                          <span className="text-red-500 ml-1">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={entry.address}
+                          onChange={(e) => {
+                            const updated = [...karmicCreditorEntries];
+                            updated[idx] = {
+                              ...updated[idx],
+                              address: e.target.value,
+                              sameAsResidence: false,
+                            };
+                            setKarmicCreditorEntries(updated);
+                          }}
+                          placeholder="請輸入居住地址"
+                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm shadow-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-200 focus:outline-none transition"
+                        />
+                        <label className="inline-flex items-center gap-2 mt-2 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={entry.sameAsResidence}
+                            onChange={(e) => {
+                              const updated = [...karmicCreditorEntries];
+                              updated[idx] = {
+                                ...updated[idx],
+                                sameAsResidence: e.target.checked,
+                                address: e.target.checked
+                                  ? residenceAddress
+                                  : "",
+                              };
+                              setKarmicCreditorEntries(updated);
+                            }}
+                            className="h-4 w-4 rounded border-gray-300 text-amber-500 focus:ring-amber-400"
+                          />
+                          <span className="text-sm text-gray-600">
+                            與居住地址相同
+                          </span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* ===== 法會金額 ===== */}
           <div className="bg-white rounded-2xl shadow-md p-6 mb-6">
             <SectionTitle title="法會金額" />
@@ -1016,8 +1192,11 @@ export default function FormPage() {
                   {babySpiritTotal > 0 && (
                     <p>嬰靈牌位 ×{babySpiritTotal}：NT$ {(babySpiritTotal * 1800).toLocaleString()}</p>
                   )}
-                  {ancestorTotal > 1 && (
-                    <p>增購祖先牌位 ×{ancestorTotal - 1}：NT$ {((ancestorTotal - 1) * 1800).toLocaleString()}</p>
+                  {ancestorTotal > 0 && (
+                    <p>祖先牌位 ×{ancestorTotal}：NT$ {(ancestorTotal * 1800).toLocaleString()}</p>
+                  )}
+                  {karmicCreditorTotal > 0 && (
+                    <p>冤親債主牌位 ×{karmicCreditorTotal}：NT$ {(karmicCreditorTotal * 1800).toLocaleString()}</p>
                   )}
                 </div>
                 <div className="text-right">
