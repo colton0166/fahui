@@ -389,7 +389,8 @@ export default function FormPage() {
   const babySpiritTotal = wantsBabySpirit === "是" ? babySpiritEntries.length : 0;
   const ancestorTotal = wantsAncestor === "是" ? ancestorEntries.length : 0;
   const karmicCreditorTotal = wantsKarmicCreditor === "是" ? karmicCreditorEntries.length : 0;
-  const totalAmount = 1800 + babySpiritTotal * 1800 + ancestorTotal * 1800 + karmicCreditorTotal * 1800;
+  const allTabletTotal = babySpiritTotal + ancestorTotal + karmicCreditorTotal;
+  const totalAmount = 1800 + Math.max(0, allTabletTotal - 1) * 1800;
   const ganZhiDisplay = lunarData?.gan_zhi_year || "";
   const lunarYearChineseDisplay = lunarData?.lunar_year || "";
   const zodiacDisplay = lunarData?.zodiac || "";
@@ -412,16 +413,13 @@ export default function FormPage() {
     }
     if (!wantsEmail) errs.push("請選擇是否要收到資料郵件");
     if (wantsEmail === "是" && !email.trim()) errs.push("請輸入 Email");
-    // 三個子表格至少要選一個
-    if (!wantsBabySpirit) errs.push("請選擇是否要增購嬰靈牌位");
-    if (!wantsAncestor) errs.push("請選擇是否要增購祖先牌位");
-    if (!wantsKarmicCreditor) errs.push("請選擇是否要增購冤親債主牌位");
-    if (
-      wantsBabySpirit === "否" &&
-      wantsAncestor === "否" &&
-      wantsKarmicCreditor === "否"
-    ) {
-      errs.push("嬰靈牌位、祖先牌位、冤親債主牌位至少需選擇一項參加");
+    // 三種牌位合計至少要有1組
+    const totalTablets =
+      (wantsBabySpirit === "是" ? babySpiritEntries.length : 0) +
+      (wantsAncestor === "是" ? ancestorEntries.length : 0) +
+      (wantsKarmicCreditor === "是" ? karmicCreditorEntries.length : 0);
+    if (totalTablets === 0) {
+      errs.push("嬰靈牌位、祖先牌位、冤親債主牌位至少需填寫一組牌位資料");
     }
     // 嬰靈牌位驗證
     if (wantsBabySpirit === "是") {
@@ -1188,15 +1186,18 @@ export default function FormPage() {
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
               <div className="flex items-center justify-between">
                 <div className="text-sm text-gray-700 space-y-1">
-                  <p>基本費用：NT$ 1,800</p>
+                  <p>基本費用（含第一組牌位）：NT$ 1,800</p>
+                  {allTabletTotal > 1 && (
+                    <p>加購牌位 ×{allTabletTotal - 1}：NT$ {((allTabletTotal - 1) * 1800).toLocaleString()}</p>
+                  )}
                   {babySpiritTotal > 0 && (
-                    <p>嬰靈牌位 ×{babySpiritTotal}：NT$ {(babySpiritTotal * 1800).toLocaleString()}</p>
+                    <p className="text-xs text-gray-500 ml-2">└ 嬰靈牌位 ×{babySpiritTotal}</p>
                   )}
                   {ancestorTotal > 0 && (
-                    <p>祖先牌位 ×{ancestorTotal}：NT$ {(ancestorTotal * 1800).toLocaleString()}</p>
+                    <p className="text-xs text-gray-500 ml-2">└ 祖先牌位 ×{ancestorTotal}</p>
                   )}
                   {karmicCreditorTotal > 0 && (
-                    <p>冤親債主牌位 ×{karmicCreditorTotal}：NT$ {(karmicCreditorTotal * 1800).toLocaleString()}</p>
+                    <p className="text-xs text-gray-500 ml-2">└ 冤親債主牌位 ×{karmicCreditorTotal}</p>
                   )}
                 </div>
                 <div className="text-right">
