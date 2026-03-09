@@ -21,6 +21,7 @@ interface BabySpiritEntry {
   name: string;
   address: string;
   sameAsResidence: boolean;
+  recommenderName: string;
 }
 const GENDER_OPTIONS = ["信士", "信女"];
 const YES_NO = ["是", "否"];
@@ -312,7 +313,7 @@ export default function FormPage() {
       const newEntries: BabySpiritEntry[] = [];
       for (let i = 0; i < count; i++) {
         newEntries.push(
-          prev[i] || { name: "", address: "", sameAsResidence: false }
+          prev[i] || { name: "", address: "", sameAsResidence: false, recommenderName: "" }
         );
       }
       return newEntries;
@@ -333,7 +334,7 @@ export default function FormPage() {
       const newEntries: BabySpiritEntry[] = [];
       for (let i = 0; i < count; i++) {
         newEntries.push(
-          prev[i] || { name: "", address: "", sameAsResidence: false }
+          prev[i] || { name: "", address: "", sameAsResidence: false, recommenderName: "" }
         );
       }
       return newEntries;
@@ -354,7 +355,7 @@ export default function FormPage() {
       const newEntries: BabySpiritEntry[] = [];
       for (let i = 0; i < count; i++) {
         newEntries.push(
-          prev[i] || { name: "", address: "", sameAsResidence: false }
+          prev[i] || { name: "", address: "", sameAsResidence: false, recommenderName: "" }
         );
       }
       return newEntries;
@@ -435,6 +436,9 @@ export default function FormPage() {
         if (!entry.address.trim()) {
           errs.push(`嬰靈牌位第 ${i + 1} 筆：請輸入地址`);
         }
+        if (!entry.recommenderName.trim()) {
+          errs.push(`嬰靈牌位第 ${i + 1} 筆：請輸入求薦者姓名`);
+        }
       });
     }
     // 祖先牌位驗證
@@ -456,15 +460,11 @@ export default function FormPage() {
     if (wantsKarmicCreditor === "是") {
       if (!karmicCreditorCount) errs.push("請選擇冤親債主牌位數量");
       karmicCreditorEntries.forEach((entry, i) => {
-        const trimmedName = entry.name.trim();
-        if (
-          trimmedName &&
-          INVALID_SPIRIT_NAMES.some((inv) => inv.toLowerCase() === trimmedName.toLowerCase())
-        ) {
-          errs.push(`冤親債主第 ${i + 1} 筆：姓名不可填寫「${trimmedName}」`);
+        if (!entry.recommenderName.trim()) {
+          errs.push(`冤親債主第 ${i + 1} 筆：請輸入求薦者姓名`);
         }
         if (!entry.address.trim()) {
-          errs.push(`冤親債主第 ${i + 1} 筆：請輸入地址`);
+          errs.push(`冤親債主第 ${i + 1} 筆：請輸入居住地址`);
         }
       });
     }
@@ -520,6 +520,7 @@ export default function FormPage() {
           babySpiritEntries: wantsBabySpirit === "是" ? babySpiritEntries.map((e) => ({
             name: e.name,
             address: e.address,
+            recommenderName: e.recommenderName,
           })) : [],
           // 祖先牌位子表格
           ancestorEntries: wantsAncestor === "是" ? ancestorEntries.map((e) => ({
@@ -528,7 +529,7 @@ export default function FormPage() {
           })) : [],
           // 冤親債主子表格
           karmicCreditorEntries: wantsKarmicCreditor === "是" ? karmicCreditorEntries.map((e) => ({
-            name: e.name,
+            recommenderName: e.recommenderName,
             address: e.address,
           })) : [],
           // 金額
@@ -904,11 +905,10 @@ export default function FormPage() {
                     <p className="text-sm font-bold text-amber-800 mb-3">
                       第 {idx + 1} 筆
                     </p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-1">
-                          嬰靈姓名
-                          <span className="text-red-500 ml-1">*</span>
+                          嬰靈牌位
                         </label>
                         <input
                           type="text"
@@ -918,11 +918,11 @@ export default function FormPage() {
                             updated[idx] = { ...updated[idx], name: e.target.value };
                             setBabySpiritEntries(updated);
                           }}
-                          placeholder="請輸入嬰靈姓名"
+                          placeholder="請輸入嬰靈姓名（可留白）"
                           className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm shadow-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-200 focus:outline-none transition"
                         />
                         <p className="text-xs text-gray-400 mt-1">
-                          請填寫正式姓名，不可填寫「沒有」等無效內容
+                          不可填寫「沒有」等無效內容
                         </p>
                       </div>
                       <div>
@@ -966,6 +966,34 @@ export default function FormPage() {
                             與居住地址相同
                           </span>
                         </label>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-1">
+                          求薦者姓名
+                          <span className="text-red-500 ml-1">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={entry.recommenderName}
+                          onChange={(e) => {
+                            const updated = [...babySpiritEntries];
+                            updated[idx] = { ...updated[idx], recommenderName: e.target.value };
+                            setBabySpiritEntries(updated);
+                          }}
+                          placeholder="請輸入求薦者姓名"
+                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm shadow-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-200 focus:outline-none transition"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = [...babySpiritEntries];
+                            updated[idx] = { ...updated[idx], recommenderName: name };
+                            setBabySpiritEntries(updated);
+                          }}
+                          className="mt-1 text-xs text-amber-600 hover:text-amber-800 underline"
+                        >
+                          帶入基本資料姓名
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -1117,19 +1145,31 @@ export default function FormPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-1">
-                          冤親債主牌位姓名
+                          求薦者姓名
+                          <span className="text-red-500 ml-1">*</span>
                         </label>
                         <input
                           type="text"
-                          value={entry.name}
+                          value={entry.recommenderName}
                           onChange={(e) => {
                             const updated = [...karmicCreditorEntries];
-                            updated[idx] = { ...updated[idx], name: e.target.value };
+                            updated[idx] = { ...updated[idx], recommenderName: e.target.value };
                             setKarmicCreditorEntries(updated);
                           }}
-                          placeholder="請輸入姓名（可留白）"
+                          placeholder="請輸入求薦者姓名"
                           className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm shadow-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-200 focus:outline-none transition"
                         />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = [...karmicCreditorEntries];
+                            updated[idx] = { ...updated[idx], recommenderName: name };
+                            setKarmicCreditorEntries(updated);
+                          }}
+                          className="mt-1 text-xs text-amber-600 hover:text-amber-800 underline"
+                        >
+                          帶入基本資料姓名
+                        </button>
                       </div>
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-1">

@@ -51,10 +51,11 @@ export async function POST(request: NextRequest) {
     if (body.babySpiritEntries && body.babySpiritEntries.length > 0) {
       const subtable: Record<string, Record<string, string>> = {};
       body.babySpiritEntries.forEach(
-        (entry: { name: string; address: string }, idx: number) => {
+        (entry: { name: string; address: string; recommenderName: string }, idx: number) => {
           subtable[String(-(idx + 1))] = {
             "1003346": entry.name || "",
             "1003347": entry.address || "",
+            "1003388": entry.recommenderName || "",
           };
         }
       );
@@ -79,9 +80,9 @@ export async function POST(request: NextRequest) {
     if (body.karmicCreditorEntries && body.karmicCreditorEntries.length > 0) {
       const subtable: Record<string, Record<string, string>> = {};
       body.karmicCreditorEntries.forEach(
-        (entry: { name: string; address: string }, idx: number) => {
+        (entry: { recommenderName: string; address: string }, idx: number) => {
           subtable[String(-(idx + 1))] = {
-            "1003385": entry.name || "",
+            "1003385": entry.recommenderName || "",
             "1003386": entry.address || "",
           };
         }
