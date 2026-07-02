@@ -395,7 +395,7 @@ export default function FormPage() {
 
   const [timeOfBirth, setTimeOfBirth] = useState("");
 
-  const [participationCount, setParticipationCount] = useState("");
+  const [participationCount, setParticipationCount] = useState("1");
 
   const [hasCompany, setHasCompany] = useState("");
   const [companyName, setCompanyName] = useState("");
