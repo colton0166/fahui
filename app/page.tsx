@@ -1125,8 +1125,8 @@ export default function FormPage() {
           <div className="bg-white rounded-2xl shadow-md p-6 mb-6 border-t-4 border-amber-400">
             <SectionTitle title="法會金額" />
             <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-              <div className="flex items-center justify-between">
-                <div className="text-sm text-gray-700 space-y-1">
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-sm text-gray-700 space-y-1 min-w-0">
                   <p>
                     參加份數 ×{shares || 0}：NT$ {shareAmount.toLocaleString()}
                   </p>
@@ -1147,9 +1147,9 @@ export default function FormPage() {
                     );
                   })}
                 </div>
-                <div className="text-right">
+                <div className="text-right shrink-0">
                   <p className="text-xs text-gray-500 mb-1">應付總額</p>
-                  <p className="text-2xl font-bold text-red-700">
+                  <p className="text-2xl font-bold text-red-700 whitespace-nowrap">
                     NT$ {totalAmount.toLocaleString()}
                   </p>
                 </div>
