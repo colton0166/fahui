@@ -251,13 +251,20 @@ function emptyEntry(): TabletEntry {
   };
 }
 
-// 逐位轉中文數字，例如 112 → 一一二
-function toChineseDigits(num: number): string {
+// 民國年轉中文：未滿百用位值（90→九十、38→三十八），滿百以上逐位（112→一一二、100→一〇〇）
+function minguoYearToChinese(num: number): string {
   const digits = ["〇", "一", "二", "三", "四", "五", "六", "七", "八", "九"];
-  return String(num)
-    .split("")
-    .map((c) => digits[Number(c)] ?? c)
-    .join("");
+  if (num >= 100) {
+    return String(num)
+      .split("")
+      .map((c) => digits[Number(c)] ?? c)
+      .join("");
+  }
+  if (num < 10) return digits[num];
+  const tens = Math.floor(num / 10);
+  const ones = num % 10;
+  const tensStr = tens === 1 ? "十" : `${digits[tens]}十`;
+  return ones ? `${tensStr}${digits[ones]}` : tensStr;
 }
 
 function getDaysInMonth(year: number, month: number): number {
@@ -507,7 +514,7 @@ export default function FormPage() {
   const minguoYear = lunarData ? lunarData.lunar_solar_year - 1911 : 0;
   const lunarBirth =
     lunarData && minguoYear > 0
-      ? `${toChineseDigits(minguoYear)}年${lunarMonth}月${lunarDay}日`
+      ? `${minguoYearToChinese(minguoYear)}年${lunarMonth}月${lunarDay}日`
       : "";
 
   const shares = parseInt(participationCount) || 0;
