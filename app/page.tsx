@@ -18,6 +18,10 @@ const COUNT_OPTIONS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"];
 const INVALID_SPIRIT_NAMES = ["沒有", "無", "沒", "不知道", "不知", "未知", "N/A", "na", "none", "null", "不清楚"];
 
 const YES_NO = ["是", "否"];
+const TIME_OPTIONS = [
+  "子", "丑", "寅", "卯", "辰", "巳",
+  "午", "未", "申", "酉", "戌", "亥", "吉",
+];
 
 // 金額規則：參加份數 1 份 = 1200，依此類推；每組牌位 +500
 const PRICE_PER_SHARE = 1200;
@@ -373,7 +377,13 @@ export default function FormPage() {
   const [lunarMonth, setLunarMonth] = useState("");
   const [lunarDay, setLunarDay] = useState("");
 
+  const [timeOfBirth, setTimeOfBirth] = useState("");
+
   const [participationCount, setParticipationCount] = useState("");
+
+  const [hasCompany, setHasCompany] = useState("");
+  const [companyName, setCompanyName] = useState("");
+  const [companyAddress, setCompanyAddress] = useState("");
 
   const [tablets, setTablets] = useState<Record<string, TabletState>>(() =>
     Object.fromEntries(
@@ -461,6 +471,13 @@ export default function FormPage() {
     setDistrict("");
   }, [city]);
 
+  useEffect(() => {
+    if (hasCompany === "否") {
+      setCompanyName("");
+      setCompanyAddress("");
+    }
+  }, [hasCompany]);
+
   // Adjust day if exceeds max
   useEffect(() => {
     if (birthDay && dayOptions.length > 0) {
@@ -530,8 +547,14 @@ export default function FormPage() {
     if (!birthYear || !birthMonth || !birthDay)
       errs.push("請選擇完整的國曆出生日期");
     if (!lunarYear) errs.push("無法取得農曆資料，請確認出生日期");
+    if (!timeOfBirth) errs.push("請選擇時辰");
     if (country === "臺灣" && !address.trim()) errs.push("請輸入地址");
     if (!participationCount) errs.push("請選擇參加份數");
+    if (!hasCompany) errs.push("請選擇是否有公司行號");
+    if (hasCompany === "是") {
+      if (!companyName.trim()) errs.push("請輸入公司名稱");
+      if (!companyAddress.trim()) errs.push("請輸入公司地址");
+    }
 
     TABLET_CONFIGS.forEach((cfg) => {
       const t = tablets[cfg.key];
@@ -593,9 +616,12 @@ export default function FormPage() {
         body: JSON.stringify({
           name,
           lunarBirth,
+          timeOfBirth,
           residenceAddress,
           address2,
           participationCount,
+          companyName: hasCompany === "是" ? companyName : "",
+          companyAddress: hasCompany === "是" ? companyAddress : "",
           tablets: tabletPayload,
         }),
       });
@@ -778,6 +804,16 @@ export default function FormPage() {
                 </div>
               </div>
             )}
+
+            <div className="mt-4">
+              <SelectField
+                label="時辰"
+                value={timeOfBirth}
+                onChange={setTimeOfBirth}
+                options={TIME_OPTIONS}
+                required
+              />
+            </div>
           </div>
 
           {/* ===== 地址資料 ===== */}
@@ -831,6 +867,40 @@ export default function FormPage() {
                 <ReadOnlyField label="居住地址（自動組合）" value={residenceAddress} />
               </div>
             )}
+          </div>
+
+          {/* ===== 公司資料 ===== */}
+          <div className="bg-white rounded-2xl shadow-md p-6 mb-6">
+            <SectionTitle title="公司資料" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <SelectField
+                label="請問是否有公司行號？"
+                value={hasCompany}
+                onChange={setHasCompany}
+                options={YES_NO}
+                required
+              />
+              <div>{/* spacer */}</div>
+
+              {hasCompany === "是" && (
+                <>
+                  <TextField
+                    label="公司名稱"
+                    value={companyName}
+                    onChange={setCompanyName}
+                    placeholder="請輸入公司名稱"
+                    required
+                  />
+                  <TextField
+                    label="公司地址"
+                    value={companyAddress}
+                    onChange={setCompanyAddress}
+                    placeholder="請輸入公司地址"
+                    required
+                  />
+                </>
+              )}
+            </div>
           </div>
 
           {/* ===== 各項牌位 ===== */}

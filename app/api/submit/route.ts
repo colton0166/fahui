@@ -59,6 +59,9 @@ export async function POST(request: NextRequest) {
       "1003653": body.residenceAddress || "",
       "1003654": body.address2 || "",
       "1003656": body.participationCount || "",
+      "1003679": body.companyName || "",
+      "1003680": body.companyAddress || "",
+      "1003681": body.timeOfBirth || "",
     };
 
     // 各牌位子表格（負數 row ID）
