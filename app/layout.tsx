@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "中元普渡報名表",
+  title: "鑫富閣中元普渡報名表",
   description: "中元普渡報名表單",
 };
 
