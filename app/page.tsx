@@ -251,6 +251,15 @@ function emptyEntry(): TabletEntry {
   };
 }
 
+// 逐位轉中文數字，例如 112 → 一一二
+function toChineseDigits(num: number): string {
+  const digits = ["〇", "一", "二", "三", "四", "五", "六", "七", "八", "九"];
+  return String(num)
+    .split("")
+    .map((c) => digits[Number(c)] ?? c)
+    .join("");
+}
+
 function getDaysInMonth(year: number, month: number): number {
   return new Date(year, month, 0).getDate();
 }
@@ -494,10 +503,12 @@ export default function FormPage() {
   const ganZhiDisplay = lunarData?.gan_zhi_year || "";
   const lunarYearChineseDisplay = lunarData?.lunar_year || "";
 
-  // 農曆出生年月日（組合成文字送入 Ragic 1003652）
-  const lunarBirth = lunarData
-    ? `${lunarYear} 農曆${lunarMonth}月${lunarDay}日 ${ganZhiDisplay}${zodiacDisplay}年`
-    : "";
+  // 農曆出生年月日（組合成文字送入 Ragic 1003652），例：一一二年十二月廿二日
+  const minguoYear = lunarData ? lunarData.lunar_solar_year - 1911 : 0;
+  const lunarBirth =
+    lunarData && minguoYear > 0
+      ? `${toChineseDigits(minguoYear)}年${lunarMonth}月${lunarDay}日`
+      : "";
 
   const shares = parseInt(participationCount) || 0;
   const totalTabletRows = TABLET_CONFIGS.reduce((sum, c) => {
