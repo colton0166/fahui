@@ -5,3 +5,78 @@
 body {
   font-family: "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", sans-serif;
 }
+
+/* ── 節慶背景特效 ───────────────────────────── */
+.festive-bg {
+  background:
+    radial-gradient(60vw 60vw at 12% -5%, rgba(255, 200, 90, 0.12), transparent 60%),
+    radial-gradient(55vw 55vw at 88% 8%, rgba(255, 150, 60, 0.1), transparent 60%),
+    radial-gradient(85vw 60vw at 50% 108%, rgba(140, 12, 12, 0.4), transparent 70%);
+}
+
+/* 柔和光暈呼吸 */
+.festive-glow {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(48px);
+  opacity: 0.5;
+  animation: glowPulse 9s ease-in-out infinite;
+}
+
+@keyframes glowPulse {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.18);
+  }
+}
+
+/* 金色微粒緩緩上升 */
+.ember {
+  position: absolute;
+  bottom: -16px;
+  border-radius: 9999px;
+  background: radial-gradient(
+    circle,
+    rgba(255, 226, 155, 0.95),
+    rgba(255, 170, 60, 0.55) 60%,
+    transparent 72%
+  );
+  box-shadow: 0 0 8px rgba(255, 190, 90, 0.85);
+  opacity: 0;
+  animation-name: emberRise;
+  animation-timing-function: ease-in;
+  animation-iteration-count: infinite;
+}
+
+@keyframes emberRise {
+  0% {
+    transform: translateY(0) translateX(0);
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.9;
+  }
+  88% {
+    opacity: 0.75;
+  }
+  100% {
+    transform: translateY(-108vh) translateX(var(--drift, 20px));
+    opacity: 0;
+  }
+}
+
+/* 尊重使用者的減少動態偏好 */
+@media (prefers-reduced-motion: reduce) {
+  .festive-glow,
+  .ember {
+    animation: none;
+  }
+  .ember {
+    display: none;
+  }
+}
