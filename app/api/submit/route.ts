@@ -4,6 +4,7 @@ const RAGIC_URL =
   "https://ap13.ragic.com/Xinfuge/supplement-treasury-data/90?api=true";
 
 interface TabletEntry {
+  scope?: string;
   yangName?: string;
   targetName?: string;
   address?: string;
@@ -12,11 +13,14 @@ interface TabletEntry {
 // 各牌位子表格 → Ragic 子表格 key 與欄位編號對應
 const SUBTABLE_MAP: Record<
   string,
-  { subtableKey: string; fields: { yangName?: string; targetName?: string; address?: string } }
+  {
+    subtableKey: string;
+    fields: { scope?: string; yangName?: string; targetName?: string; address?: string };
+  }
 > = {
   quanjia: {
     subtableKey: "1003673",
-    fields: { targetName: "1003657", address: "1003658" },
+    fields: { scope: "1003682", targetName: "1003657", address: "1003658" },
   },
   ancestor: {
     subtableKey: "1003674",
@@ -73,6 +77,7 @@ export async function POST(request: NextRequest) {
       const subtable: Record<string, Record<string, string>> = {};
       entries.forEach((entry, idx) => {
         const row: Record<string, string> = {};
+        if (map.fields.scope) row[map.fields.scope] = entry.scope || "";
         if (map.fields.yangName)
           row[map.fields.yangName] = entry.yangName || "";
         if (map.fields.targetName)

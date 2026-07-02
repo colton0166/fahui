@@ -28,13 +28,14 @@ const PRICE_PER_SHARE = 1200;
 const PRICE_PER_TABLET = 500;
 
 // ── 牌位子表格設定 ──────────────────────────────────────────
-type EntryKey = "yangName" | "targetName" | "address";
+type EntryKey = "scope" | "yangName" | "targetName" | "address";
 
 interface TabletFieldConfig {
   key: EntryKey;
   fieldId: string;
   label: string;
   required: boolean;
+  options?: string[]; // 有值時渲染為單選下拉，否則為文字輸入
   isAddress?: boolean; // 顯示「與居住地址相同」勾選框
   sameAsMainName?: boolean; // 顯示「與基本資料姓名相同」勾選框
   allowBlankName?: boolean; // 允許留白（僅檢查無效字詞）
@@ -52,9 +53,16 @@ interface TabletConfig {
 const TABLET_CONFIGS: TabletConfig[] = [
   {
     key: "quanjia",
-    title: "全家消災長生祿位",
+    title: "全家/個人",
     subtableKey: "1003673",
     fields: [
+      {
+        key: "scope",
+        fieldId: "1003682",
+        label: "全家/個人",
+        required: true,
+        options: ["全家", "個人"],
+      },
       {
         key: "targetName",
         fieldId: "1003657",
@@ -228,6 +236,7 @@ const TABLET_CONFIGS: TabletConfig[] = [
 ];
 
 interface TabletEntry {
+  scope: string;
   yangName: string;
   targetName: string;
   address: string;
@@ -243,6 +252,7 @@ interface TabletState {
 
 function emptyEntry(): TabletEntry {
   return {
+    scope: "",
     yangName: "",
     targetName: "",
     address: "",
@@ -591,7 +601,8 @@ export default function FormPage() {
               errs.push(`${cfg.title}第 ${i + 1} 筆：${f.label}不可填寫「${val}」`);
             }
           } else if (f.required && !val) {
-            errs.push(`${cfg.title}第 ${i + 1} 筆：請輸入${f.label}`);
+            const verb = f.options ? "請選擇" : "請輸入";
+            errs.push(`${cfg.title}第 ${i + 1} 筆：${verb}${f.label}`);
           } else if (
             f.key !== "address" &&
             val &&
@@ -990,21 +1001,41 @@ export default function FormPage() {
                                   {hintPlaceholder}
                                 </p>
                               ) : null}
-                              <input
-                                type="text"
-                                value={entry[f.key]}
-                                onChange={(e) => {
-                                  const patch: Partial<TabletEntry> = {
-                                    [f.key]: e.target.value,
-                                  };
-                                  if (f.isAddress) patch.sameAsResidence = false;
-                                  if (f.sameAsMainName)
-                                    patch.sameAsMainName = false;
-                                  updateEntry(cfg.key, idx, patch);
-                                }}
-                                placeholder={f.placeholder}
-                                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm shadow-sm focus:border-red-500 focus:ring-2 focus:ring-red-200 focus:outline-none transition"
-                              />
+                              {f.options ? (
+                                <select
+                                  value={entry[f.key]}
+                                  onChange={(e) =>
+                                    updateEntry(cfg.key, idx, {
+                                      [f.key]: e.target.value,
+                                    })
+                                  }
+                                  className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm shadow-sm focus:border-red-500 focus:ring-2 focus:ring-red-200 focus:outline-none transition"
+                                >
+                                  <option value="">請選擇</option>
+                                  {f.options.map((opt) => (
+                                    <option key={opt} value={opt}>
+                                      {opt}
+                                    </option>
+                                  ))}
+                                </select>
+                              ) : (
+                                <input
+                                  type="text"
+                                  value={entry[f.key]}
+                                  onChange={(e) => {
+                                    const patch: Partial<TabletEntry> = {
+                                      [f.key]: e.target.value,
+                                    };
+                                    if (f.isAddress)
+                                      patch.sameAsResidence = false;
+                                    if (f.sameAsMainName)
+                                      patch.sameAsMainName = false;
+                                    updateEntry(cfg.key, idx, patch);
+                                  }}
+                                  placeholder={f.placeholder}
+                                  className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm shadow-sm focus:border-red-500 focus:ring-2 focus:ring-red-200 focus:outline-none transition"
+                                />
+                              )}
                               {f.isAddress && (
                                 <label className="inline-flex items-center gap-2 mt-2 cursor-pointer select-none">
                                   <input
