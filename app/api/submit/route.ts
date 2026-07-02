@@ -86,10 +86,11 @@ export async function POST(request: NextRequest) {
 
     console.log("[Ragic Submit] body:", JSON.stringify(ragicData, null, 2));
 
-    const response = await fetch(RAGIC_URL, {
+    // 此表單以 APIKey query 參數認證（Basic auth 會被視為 guest 而回傳 106）
+    const submitUrl = `${RAGIC_URL}&APIKey=${encodeURIComponent(apiKey)}`;
+    const response = await fetch(submitUrl, {
       method: "POST",
       headers: {
-        Authorization: `Basic ${Buffer.from(apiKey + ":").toString("base64")}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify(ragicData),
