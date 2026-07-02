@@ -30,10 +30,12 @@ const PRICE_PER_TABLET = 500; // 一般加購牌位每份
 const PRICE_FAMILY = 1000; // 全戶消災每份
 const PRICE_PERSONAL = 500; // 個人消災每份
 
-// 單筆牌位金額：全家/個人消災依範圍計價，其餘固定 500
+// 單筆牌位金額：全家/個人消災依範圍計價（未選擇則不計），其餘固定 500
 function tabletRowPrice(tabletKey: string, entry: TabletEntry): number {
   if (tabletKey === "quanjia") {
-    return entry.scope === "全家" ? PRICE_FAMILY : PRICE_PERSONAL;
+    if (entry.scope === "全家") return PRICE_FAMILY;
+    if (entry.scope === "個人") return PRICE_PERSONAL;
+    return 0; // 尚未選擇全家/個人，不列入計算
   }
   return PRICE_PER_TABLET;
 }
