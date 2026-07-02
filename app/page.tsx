@@ -689,6 +689,15 @@ export default function FormPage() {
               普渡十方・慎終追遠
             </p>
           </div>
+
+          {/* 活動海報 */}
+          <div className="mt-6">
+            <img
+              src="/poster.jpg"
+              alt="慶讚中元 中元普渡祈福海報"
+              className="mx-auto w-full max-w-md rounded-2xl shadow-xl border-2 border-amber-400"
+            />
+          </div>
         </div>
 
         {/* Error messages */}
