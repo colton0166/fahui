@@ -53,7 +53,7 @@ interface TabletConfig {
 const TABLET_CONFIGS: TabletConfig[] = [
   {
     key: "quanjia",
-    title: "全家/個人",
+    title: "全家/個人消災長生祿位",
     subtableKey: "1003673",
     fields: [
       {
