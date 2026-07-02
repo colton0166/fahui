@@ -680,7 +680,7 @@ export default function FormPage() {
         <div className="text-center mb-8">
           <div className="inline-block bg-gradient-to-b from-red-700 via-red-800 to-red-900 text-amber-100 px-10 py-5 rounded-2xl shadow-xl border-2 border-amber-400">
             <p className="text-amber-300 text-sm tracking-[0.5em] mb-1">
-              盂蘭盆會
+              國曆9月4日
             </p>
             <h1 className="text-2xl md:text-3xl font-bold tracking-wide text-amber-200 drop-shadow">
               中元普渡報名表
