@@ -922,6 +922,8 @@ export default function FormPage() {
           {/* ===== 各項牌位 ===== */}
           {TABLET_CONFIGS.map((cfg) => {
             const t = tablets[cfg.key];
+            // 取本牌位唯一的說明文字，供無說明的欄位保留等高空間以對齊輸入框
+            const hintPlaceholder = cfg.fields.find((f) => f.hint)?.hint;
             return (
               <div key={cfg.key} className="bg-white rounded-2xl shadow-md p-6 mb-6 border-t-4 border-amber-400">
                 <SectionTitle title={cfg.title} />
@@ -969,11 +971,18 @@ export default function FormPage() {
                                   <span className="text-red-500 ml-1">*</span>
                                 )}
                               </label>
-                              {f.hint && (
+                              {f.hint ? (
                                 <p className="text-xs text-gray-500 mb-2 leading-relaxed">
                                   {f.hint}
                                 </p>
-                              )}
+                              ) : hintPlaceholder ? (
+                                <p
+                                  className="text-xs text-transparent mb-2 leading-relaxed select-none"
+                                  aria-hidden="true"
+                                >
+                                  {hintPlaceholder}
+                                </p>
+                              ) : null}
                               <input
                                 type="text"
                                 value={entry[f.key]}
@@ -1025,6 +1034,19 @@ export default function FormPage() {
                                   <span className="text-sm text-gray-600">
                                     與基本資料姓名相同
                                   </span>
+                                </label>
+                              )}
+                              {!f.isAddress && !f.sameAsMainName && (
+                                <label
+                                  className="inline-flex items-center gap-2 mt-2 select-none invisible"
+                                  aria-hidden="true"
+                                >
+                                  <input
+                                    type="checkbox"
+                                    readOnly
+                                    className="h-4 w-4 rounded border-gray-300"
+                                  />
+                                  <span className="text-sm text-gray-600">佔位</span>
                                 </label>
                               )}
                             </div>
