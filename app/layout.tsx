@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "清明慎終追遠法會報名表",
-  description: "清明慎終追遠法會報名表單",
+  title: "中元普渡報名表",
+  description: "中元普渡報名表單",
 };
 
 export default function RootLayout({

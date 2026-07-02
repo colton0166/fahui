@@ -14,45 +14,237 @@ interface LunarData {
   is_after_lichun: boolean;
 }
 
-const BABY_SPIRIT_COUNT_OPTIONS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"];
+const COUNT_OPTIONS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"];
 const INVALID_SPIRIT_NAMES = ["沒有", "無", "沒", "不知道", "不知", "未知", "N/A", "na", "none", "null", "不清楚"];
 
-interface BabySpiritEntry {
-  name: string;
-  address: string;
-  sameAsResidence: boolean;
-  recommenderName: string;
-  sameAsMainName: boolean;
-}
-const GENDER_OPTIONS = ["信士", "信女"];
 const YES_NO = ["是", "否"];
-const TIME_OPTIONS = [
-  "子", "丑", "寅", "卯", "辰", "巳",
-  "午", "未", "申", "酉", "戌", "亥", "吉",
-];
-const LUNAR_DAY_OPTIONS = [
-  "初一","初二","初三","初四","初五","初六","初七","初八","初九","初十",
-  "十一","十二","十三","十四","十五","十六","十七","十八","十九","二十",
-  "廿一","廿二","廿三","廿四","廿五","廿六","廿七","廿八","廿九","三十",
+
+// 金額規則：參加份數 1 份 = 1200，依此類推；每組牌位 +500
+const PRICE_PER_SHARE = 1200;
+const PRICE_PER_TABLET = 500;
+
+// ── 牌位子表格設定 ──────────────────────────────────────────
+type EntryKey = "yangName" | "targetName" | "address";
+
+interface TabletFieldConfig {
+  key: EntryKey;
+  fieldId: string;
+  label: string;
+  required: boolean;
+  isAddress?: boolean; // 顯示「與居住地址相同」勾選框
+  sameAsMainName?: boolean; // 顯示「與基本資料姓名相同」勾選框
+  allowBlankName?: boolean; // 允許留白（僅檢查無效字詞）
+  hint?: React.ReactNode;
+  placeholder?: string;
+}
+
+interface TabletConfig {
+  key: string;
+  title: string;
+  subtableKey: string;
+  fields: TabletFieldConfig[];
+}
+
+const TABLET_CONFIGS: TabletConfig[] = [
+  {
+    key: "quanjia",
+    title: "全家消災長生祿位",
+    subtableKey: "1003673",
+    fields: [
+      {
+        key: "targetName",
+        fieldId: "1003657",
+        label: "全家消災長生祿位（姓名）",
+        required: true,
+        sameAsMainName: true,
+        placeholder: "請輸入姓名",
+      },
+      {
+        key: "address",
+        fieldId: "1003658",
+        label: "地址",
+        required: true,
+        isAddress: true,
+        placeholder: "請輸入地址",
+      },
+    ],
+  },
+  {
+    key: "ancestor",
+    title: "超薦祖先牌位",
+    subtableKey: "1003674",
+    fields: [
+      {
+        key: "yangName",
+        fieldId: "1003659",
+        label: "陽上超薦人",
+        required: true,
+        sameAsMainName: true,
+        placeholder: "請輸入陽上超薦人姓名",
+      },
+      {
+        key: "targetName",
+        fieldId: "1003660",
+        label: "超薦祖先姓氏或姓名",
+        required: true,
+        placeholder: "例：黃 或 黃OO",
+        hint: (
+          <>
+            • 報名「歷代祖先」請填寫 <span className="font-bold text-amber-700">姓氏</span>
+            <br />
+            • 報名「指定祖先」請填寫 <span className="font-bold text-amber-700">祖先姓名</span>
+          </>
+        ),
+      },
+      {
+        key: "address",
+        fieldId: "1003661",
+        label: "地址",
+        required: true,
+        isAddress: true,
+        placeholder: "請輸入牌位地址",
+      },
+    ],
+  },
+  {
+    key: "karmic",
+    title: "冤親債主牌位",
+    subtableKey: "1003675",
+    fields: [
+      {
+        key: "yangName",
+        fieldId: "1003662",
+        label: "陽上姓名",
+        required: true,
+        sameAsMainName: true,
+        placeholder: "請輸入陽上姓名",
+      },
+      {
+        key: "address",
+        fieldId: "1003663",
+        label: "地址",
+        required: true,
+        isAddress: true,
+        placeholder: "請輸入居住地址",
+      },
+    ],
+  },
+  {
+    key: "unborn",
+    title: "超薦無緣子女（嬰靈）牌位",
+    subtableKey: "1003676",
+    fields: [
+      {
+        key: "yangName",
+        fieldId: "1003664",
+        label: "陽上超薦人姓名",
+        required: true,
+        sameAsMainName: true,
+        placeholder: "請輸入陽上超薦人姓名",
+      },
+      {
+        key: "targetName",
+        fieldId: "1003665",
+        label: "無緣子女姓名",
+        required: false,
+        allowBlankName: true,
+        placeholder: "請輸入無緣子女姓名（可留白）",
+        hint: "不可填寫「沒有」等無效內容",
+      },
+      {
+        key: "address",
+        fieldId: "1003666",
+        label: "地址",
+        required: true,
+        isAddress: true,
+        placeholder: "請輸入地址",
+      },
+    ],
+  },
+  {
+    key: "friends",
+    title: "超渡親朋好友牌位",
+    subtableKey: "1003677",
+    fields: [
+      {
+        key: "yangName",
+        fieldId: "1003667",
+        label: "陽上超薦人姓名",
+        required: true,
+        sameAsMainName: true,
+        placeholder: "請輸入陽上超薦人姓名",
+      },
+      {
+        key: "targetName",
+        fieldId: "1003668",
+        label: "超渡親朋好友姓名",
+        required: true,
+        placeholder: "請輸入親朋好友姓名",
+      },
+      {
+        key: "address",
+        fieldId: "1003669",
+        label: "地址",
+        required: true,
+        isAddress: true,
+        placeholder: "請輸入地址",
+      },
+    ],
+  },
+  {
+    key: "pets",
+    title: "超薦寵物牌位",
+    subtableKey: "1003678",
+    fields: [
+      {
+        key: "yangName",
+        fieldId: "1003670",
+        label: "陽上超薦人姓名",
+        required: true,
+        sameAsMainName: true,
+        placeholder: "請輸入陽上超薦人姓名",
+      },
+      {
+        key: "targetName",
+        fieldId: "1003671",
+        label: "超薦寵物及姓名",
+        required: true,
+        placeholder: "請輸入寵物種類及姓名",
+      },
+      {
+        key: "address",
+        fieldId: "1003672",
+        label: "地址",
+        required: true,
+        isAddress: true,
+        placeholder: "請輸入地址",
+      },
+    ],
+  },
 ];
 
-function toChineseNumeral(num: number): string {
-  if (num <= 0) return String(num);
-  const digits = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
-  if (num < 10) return digits[num];
-  if (num === 10) return '十';
-  if (num < 20) return '十' + digits[num % 10];
-  if (num < 100) {
-    const t = Math.floor(num / 10);
-    const o = num % 10;
-    return digits[t] + '十' + (o ? digits[o] : '');
-  }
-  const h = Math.floor(num / 100);
-  const remainder = num % 100;
-  let result = digits[h] + '百';
-  if (remainder === 0) return result;
-  if (remainder < 10) return result + '零' + digits[remainder];
-  return result + toChineseNumeral(remainder);
+interface TabletEntry {
+  yangName: string;
+  targetName: string;
+  address: string;
+  sameAsResidence: boolean;
+  sameAsMainName: boolean;
+}
+
+interface TabletState {
+  wants: string;
+  count: string;
+  entries: TabletEntry[];
+}
+
+function emptyEntry(): TabletEntry {
+  return {
+    yangName: "",
+    targetName: "",
+    address: "",
+    sameAsResidence: false,
+    sameAsMainName: false,
+  };
 }
 
 function getDaysInMonth(year: number, month: number): number {
@@ -164,9 +356,6 @@ function SectionTitle({ title }: { title: string }) {
 export default function FormPage() {
   const router = useRouter();
   const [name, setName] = useState("");
-  const [gender, setGender] = useState("");
-  const [hasNickname, setHasNickname] = useState("");
-  const [nickname, setNickname] = useState("");
 
   const [country, setCountry] = useState("");
   const [city, setCity] = useState("");
@@ -184,26 +373,13 @@ export default function FormPage() {
   const [lunarMonth, setLunarMonth] = useState("");
   const [lunarDay, setLunarDay] = useState("");
 
-  const [timeOfBirth, setTimeOfBirth] = useState("");
+  const [participationCount, setParticipationCount] = useState("");
 
-  const [hasCompany, setHasCompany] = useState("");
-  const [companyName, setCompanyName] = useState("");
-  const [companyAddress, setCompanyAddress] = useState("");
-
-  const [wantsEmail, setWantsEmail] = useState("");
-  const [email, setEmail] = useState("");
-
-  const [wantsBabySpirit, setWantsBabySpirit] = useState("");
-  const [babySpiritCount, setBabySpiritCount] = useState("");
-  const [babySpiritEntries, setBabySpiritEntries] = useState<BabySpiritEntry[]>([]);
-
-  const [wantsAncestor, setWantsAncestor] = useState("");
-  const [ancestorCount, setAncestorCount] = useState("");
-  const [ancestorEntries, setAncestorEntries] = useState<BabySpiritEntry[]>([]);
-
-  const [wantsKarmicCreditor, setWantsKarmicCreditor] = useState("");
-  const [karmicCreditorCount, setKarmicCreditorCount] = useState("");
-  const [karmicCreditorEntries, setKarmicCreditorEntries] = useState<BabySpiritEntry[]>([]);
+  const [tablets, setTablets] = useState<Record<string, TabletState>>(() =>
+    Object.fromEntries(
+      TABLET_CONFIGS.map((c) => [c.key, { wants: "", count: "", entries: [] }])
+    )
+  );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitResult, setSubmitResult] = useState<{
@@ -285,84 +461,6 @@ export default function FormPage() {
     setDistrict("");
   }, [city]);
 
-  useEffect(() => {
-    if (hasNickname === "否") setNickname("");
-  }, [hasNickname]);
-
-  useEffect(() => {
-    if (hasCompany === "否") {
-      setCompanyName("");
-      setCompanyAddress("");
-    }
-  }, [hasCompany]);
-
-  useEffect(() => {
-    if (wantsEmail === "否") setEmail("");
-  }, [wantsEmail]);
-
-  useEffect(() => {
-    if (wantsBabySpirit === "否") {
-      setBabySpiritCount("");
-      setBabySpiritEntries([]);
-    }
-  }, [wantsBabySpirit]);
-
-  useEffect(() => {
-    const count = parseInt(babySpiritCount) || 0;
-    setBabySpiritEntries((prev) => {
-      if (count === 0) return [];
-      const newEntries: BabySpiritEntry[] = [];
-      for (let i = 0; i < count; i++) {
-        newEntries.push(
-          prev[i] || { name: "", address: "", sameAsResidence: false, recommenderName: "", sameAsMainName: false }
-        );
-      }
-      return newEntries;
-    });
-  }, [babySpiritCount]);
-
-  useEffect(() => {
-    if (wantsAncestor === "否") {
-      setAncestorCount("");
-      setAncestorEntries([]);
-    }
-  }, [wantsAncestor]);
-
-  useEffect(() => {
-    const count = parseInt(ancestorCount) || 0;
-    setAncestorEntries((prev) => {
-      if (count === 0) return [];
-      const newEntries: BabySpiritEntry[] = [];
-      for (let i = 0; i < count; i++) {
-        newEntries.push(
-          prev[i] || { name: "", address: "", sameAsResidence: false, recommenderName: "", sameAsMainName: false }
-        );
-      }
-      return newEntries;
-    });
-  }, [ancestorCount]);
-
-  useEffect(() => {
-    if (wantsKarmicCreditor === "否") {
-      setKarmicCreditorCount("");
-      setKarmicCreditorEntries([]);
-    }
-  }, [wantsKarmicCreditor]);
-
-  useEffect(() => {
-    const count = parseInt(karmicCreditorCount) || 0;
-    setKarmicCreditorEntries((prev) => {
-      if (count === 0) return [];
-      const newEntries: BabySpiritEntry[] = [];
-      for (let i = 0; i < count; i++) {
-        newEntries.push(
-          prev[i] || { name: "", address: "", sameAsResidence: false, recommenderName: "", sameAsMainName: false }
-        );
-      }
-      return newEntries;
-    });
-  }, [karmicCreditorCount]);
-
   // Adjust day if exceeds max
   useEffect(() => {
     if (birthDay && dayOptions.length > 0) {
@@ -375,100 +473,96 @@ export default function FormPage() {
 
   // Computed
   const residenceAddress = `${city}${district}${address}`;
-  const nicknameDisplay = nickname ? `綽號：${nickname}` : "";
-  const companyAddressDisplay = companyAddress ? `(${companyAddress})` : "";
-  const minguoYearShort = lunarYear ? lunarYear.substring(0, 3) : "";
-
-  const currentYear = new Date().getFullYear();
-  const birthSolarYear = lunarData?.lunar_solar_year || 0;
-  const ageDisplay = birthSolarYear
-    ? `${currentYear - birthSolarYear + 1}`
-    : "";
-  const lunarAgeDisplay = birthSolarYear
-    ? toChineseNumeral(currentYear - birthSolarYear + 1)
-    : "";
-
-  const babySpiritTotal = wantsBabySpirit === "是" ? babySpiritEntries.length : 0;
-  const ancestorTotal = wantsAncestor === "是" ? ancestorEntries.length : 0;
-  const karmicCreditorTotal = wantsKarmicCreditor === "是" ? karmicCreditorEntries.length : 0;
-  const allTabletTotal = babySpiritTotal + ancestorTotal + karmicCreditorTotal;
-  const totalAmount = 1800 + Math.max(0, allTabletTotal - 1) * 1800;
+  const zodiacDisplay = lunarData?.zodiac || "";
   const ganZhiDisplay = lunarData?.gan_zhi_year || "";
   const lunarYearChineseDisplay = lunarData?.lunar_year || "";
-  const zodiacDisplay = lunarData?.zodiac || "";
+
+  // 農曆出生年月日（組合成文字送入 Ragic 1003652）
+  const lunarBirth = lunarData
+    ? `${lunarYear} 農曆${lunarMonth}月${lunarDay}日 ${ganZhiDisplay}${zodiacDisplay}年`
+    : "";
+
+  const shares = parseInt(participationCount) || 0;
+  const totalTabletRows = TABLET_CONFIGS.reduce((sum, c) => {
+    const t = tablets[c.key];
+    return sum + (t.wants === "是" ? t.entries.length : 0);
+  }, 0);
+  const shareAmount = shares * PRICE_PER_SHARE;
+  const tabletAmount = totalTabletRows * PRICE_PER_TABLET;
+  const totalAmount = shareAmount + tabletAmount;
+
+  // ── 牌位 state 更新 helpers ──────────────────────────────
+  function setTabletWants(key: string, wants: string) {
+    setTablets((prev) => {
+      const next = { ...prev };
+      if (wants === "否") {
+        next[key] = { wants, count: "", entries: [] };
+      } else {
+        next[key] = { ...prev[key], wants };
+      }
+      return next;
+    });
+  }
+
+  function setTabletCount(key: string, count: string) {
+    setTablets((prev) => {
+      const n = parseInt(count) || 0;
+      const prevEntries = prev[key].entries;
+      const entries: TabletEntry[] = [];
+      for (let i = 0; i < n; i++) entries.push(prevEntries[i] || emptyEntry());
+      return { ...prev, [key]: { ...prev[key], count, entries } };
+    });
+  }
+
+  function updateEntry(key: string, idx: number, patch: Partial<TabletEntry>) {
+    setTablets((prev) => {
+      const entries = prev[key].entries.map((e, i) =>
+        i === idx ? { ...e, ...patch } : e
+      );
+      return { ...prev, [key]: { ...prev[key], entries } };
+    });
+  }
 
   function validate(): string[] {
     const errs: string[] = [];
     if (!name.trim()) errs.push("請輸入姓名");
-    if (!gender) errs.push("請選擇性別");
-    if (!hasNickname) errs.push("請選擇是否有綽號");
     if (!country) errs.push("請選擇國家");
     if (!birthYear || !birthMonth || !birthDay)
       errs.push("請選擇完整的國曆出生日期");
     if (!lunarYear) errs.push("無法取得農曆資料，請確認出生日期");
-    if (!timeOfBirth) errs.push("請選擇時辰");
     if (country === "臺灣" && !address.trim()) errs.push("請輸入地址");
-    if (!hasCompany) errs.push("請選擇是否有公司行號");
-    if (hasCompany === "是") {
-      if (!companyName.trim()) errs.push("請輸入公司名稱");
-      if (!companyAddress.trim()) errs.push("請輸入公司地址");
-    }
-    if (!wantsEmail) errs.push("請選擇是否要收到資料郵件");
-    if (wantsEmail === "是" && !email.trim()) errs.push("請輸入 Email");
-    // 三種牌位合計至少要有1組
-    const totalTablets =
-      (wantsBabySpirit === "是" ? babySpiritEntries.length : 0) +
-      (wantsAncestor === "是" ? ancestorEntries.length : 0) +
-      (wantsKarmicCreditor === "是" ? karmicCreditorEntries.length : 0);
-    if (totalTablets === 0) {
-      errs.push("嬰靈牌位、祖先牌位、冤親債主牌位至少需填寫一組牌位資料");
-    }
-    // 嬰靈牌位驗證
-    if (wantsBabySpirit === "是") {
-      if (!babySpiritCount) errs.push("請選擇嬰靈牌位數量");
-      babySpiritEntries.forEach((entry, i) => {
-        const trimmedName = entry.name.trim();
-        if (
-          trimmedName &&
-          INVALID_SPIRIT_NAMES.some((inv) => inv.toLowerCase() === trimmedName.toLowerCase())
-        ) {
-          errs.push(`嬰靈牌位第 ${i + 1} 筆：嬰靈姓名不可填寫「${trimmedName}」`);
-        }
-        if (!entry.address.trim()) {
-          errs.push(`嬰靈牌位第 ${i + 1} 筆：請輸入地址`);
-        }
-        if (!entry.recommenderName.trim()) {
-          errs.push(`嬰靈牌位第 ${i + 1} 筆：請輸入求薦者姓名`);
-        }
+    if (!participationCount) errs.push("請選擇參加份數");
+
+    TABLET_CONFIGS.forEach((cfg) => {
+      const t = tablets[cfg.key];
+      if (t.wants !== "是") return;
+      if (!t.count) errs.push(`請選擇${cfg.title}數量`);
+      t.entries.forEach((entry, i) => {
+        cfg.fields.forEach((f) => {
+          const val = entry[f.key].trim();
+          if (f.allowBlankName) {
+            if (
+              val &&
+              INVALID_SPIRIT_NAMES.some(
+                (inv) => inv.toLowerCase() === val.toLowerCase()
+              )
+            ) {
+              errs.push(`${cfg.title}第 ${i + 1} 筆：${f.label}不可填寫「${val}」`);
+            }
+          } else if (f.required && !val) {
+            errs.push(`${cfg.title}第 ${i + 1} 筆：請輸入${f.label}`);
+          } else if (
+            f.key !== "address" &&
+            val &&
+            INVALID_SPIRIT_NAMES.some(
+              (inv) => inv.toLowerCase() === val.toLowerCase()
+            )
+          ) {
+            errs.push(`${cfg.title}第 ${i + 1} 筆：${f.label}不可填寫「${val}」`);
+          }
+        });
       });
-    }
-    // 祖先牌位驗證
-    if (wantsAncestor === "是") {
-      if (!ancestorCount) errs.push("請選擇祖先牌位數量");
-      ancestorEntries.forEach((entry, i) => {
-        const trimmedName = entry.name.trim();
-        if (!trimmedName) {
-          errs.push(`祖先牌位第 ${i + 1} 筆：請輸入祖先牌位名稱`);
-        } else if (INVALID_SPIRIT_NAMES.some((inv) => inv.toLowerCase() === trimmedName.toLowerCase())) {
-          errs.push(`祖先牌位第 ${i + 1} 筆：祖先牌位名稱不可填寫「${trimmedName}」`);
-        }
-        if (!entry.address.trim()) {
-          errs.push(`祖先牌位第 ${i + 1} 筆：請輸入牌位地址`);
-        }
-      });
-    }
-    // 冤親債主牌位驗證
-    if (wantsKarmicCreditor === "是") {
-      if (!karmicCreditorCount) errs.push("請選擇冤親債主牌位數量");
-      karmicCreditorEntries.forEach((entry, i) => {
-        if (!entry.recommenderName.trim()) {
-          errs.push(`冤親債主第 ${i + 1} 筆：請輸入求薦者姓名`);
-        }
-        if (!entry.address.trim()) {
-          errs.push(`冤親債主第 ${i + 1} 筆：請輸入居住地址`);
-        }
-      });
-    }
+    });
     return errs;
   }
 
@@ -484,6 +578,13 @@ export default function FormPage() {
     }
     setErrors([]);
 
+    // 組合各牌位子表格資料
+    const tabletPayload: Record<string, TabletEntry[]> = {};
+    TABLET_CONFIGS.forEach((cfg) => {
+      const t = tablets[cfg.key];
+      tabletPayload[cfg.key] = t.wants === "是" ? t.entries : [];
+    });
+
     setIsSubmitting(true);
     try {
       const res = await fetch("/api/submit", {
@@ -491,50 +592,11 @@ export default function FormPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name,
-          gender,
-          hasNickname,
-          nickname: hasNickname === "是" ? nickname : "",
-          country,
-          city,
-          district,
-          address,
-          address2,
-          lunarYear,
-          lunarMonth,
-          lunarDay,
-          timeOfBirth,
-          hasCompany,
-          companyName: hasCompany === "是" ? companyName : "",
-          companyAddress: hasCompany === "是" ? companyAddress : "",
-          wantsEmail,
-          email: wantsEmail === "是" ? email : "",
-          // 唯讀/計算欄位
-          nicknameDisplay,
+          lunarBirth,
           residenceAddress,
-          ganZhiYear: ganZhiDisplay,
-          age: ageDisplay,
-          lunarAge: lunarAgeDisplay,
-          lunarYearChinese: lunarYearChineseDisplay,
-          companyAddressDisplay,
-          minguoYearShort,
-          // 嬰靈牌位子表格
-          babySpiritEntries: wantsBabySpirit === "是" ? babySpiritEntries.map((e) => ({
-            name: e.name,
-            address: e.address,
-            recommenderName: e.recommenderName,
-          })) : [],
-          // 祖先牌位子表格
-          ancestorEntries: wantsAncestor === "是" ? ancestorEntries.map((e) => ({
-            name: e.name,
-            address: e.address,
-          })) : [],
-          // 冤親債主子表格
-          karmicCreditorEntries: wantsKarmicCreditor === "是" ? karmicCreditorEntries.map((e) => ({
-            recommenderName: e.recommenderName,
-            address: e.address,
-          })) : [],
-          // 金額
-          totalAmount: String(totalAmount),
+          address2,
+          participationCount,
+          tablets: tabletPayload,
         }),
       });
 
@@ -563,20 +625,16 @@ export default function FormPage() {
         <div className="text-center mb-8">
           <div className="inline-block bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 text-white px-8 py-4 rounded-2xl shadow-lg">
             <h1 className="text-2xl md:text-3xl font-bold tracking-wide">
-              清明慎終追遠法會報名表
+              中元普渡報名表
             </h1>
-            <p className="text-amber-100 text-sm mt-1">
-              請詳細填寫以下資料
-            </p>
+            <p className="text-amber-100 text-sm mt-1">請詳細填寫以下資料</p>
           </div>
         </div>
 
         {/* Error messages */}
         {errors.length > 0 && (
           <div className="mb-6 bg-red-50 border border-red-200 rounded-xl p-4">
-            <p className="font-semibold text-red-700 mb-2">
-              請修正以下問題：
-            </p>
+            <p className="font-semibold text-red-700 mb-2">請修正以下問題：</p>
             <ul className="list-disc list-inside text-sm text-red-600 space-y-1">
               {errors.map((err, i) => (
                 <li key={i}>{err}</li>
@@ -611,27 +669,12 @@ export default function FormPage() {
                 placeholder="請輸入姓名"
               />
               <SelectField
-                label="請選擇性別"
-                value={gender}
-                onChange={setGender}
-                options={GENDER_OPTIONS}
+                label="參加份數"
+                value={participationCount}
+                onChange={setParticipationCount}
+                options={COUNT_OPTIONS}
                 required
               />
-              <SelectField
-                label="請問是否有綽號？"
-                value={hasNickname}
-                onChange={setHasNickname}
-                options={YES_NO}
-                required
-              />
-              {hasNickname === "是" && (
-                <TextField
-                  label="請輸入綽號"
-                  value={nickname}
-                  onChange={setNickname}
-                  placeholder="請輸入綽號"
-                />
-              )}
             </div>
           </div>
 
@@ -698,11 +741,7 @@ export default function FormPage() {
 
             {lunarLoading && (
               <div className="text-sm text-amber-600 mb-3 flex items-center gap-2">
-                <svg
-                  className="animate-spin h-4 w-4"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                >
+                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
                   <circle
                     className="opacity-25"
                     cx="12"
@@ -722,7 +761,7 @@ export default function FormPage() {
             )}
 
             {lunarData && (
-              <div className="bg-amber-50 rounded-xl border border-amber-200 p-4 mb-4">
+              <div className="bg-amber-50 rounded-xl border border-amber-200 p-4">
                 <p className="text-sm font-semibold text-amber-800 mb-3">
                   農曆轉換結果
                 </p>
@@ -730,34 +769,15 @@ export default function FormPage() {
                   <ReadOnlyField label="西元民國年" value={lunarYear} />
                   <ReadOnlyField label="農曆出生月" value={lunarMonth} />
                   <ReadOnlyField label="農曆出生日" value={lunarDay} />
-                  <ReadOnlyField
-                    label="生肖"
-                    value={zodiacDisplay}
-                  />
+                  <ReadOnlyField label="生肖" value={zodiacDisplay} />
                   <ReadOnlyField label="歲次" value={ganZhiDisplay} />
-                  <ReadOnlyField
-                    label="農曆年國字"
-                    value={lunarYearChineseDisplay}
-                  />
-                  <ReadOnlyField
-                    label="歲數（虛歲）"
-                    value={ageDisplay}
-                  />
-                  <ReadOnlyField
-                    label="農曆年（民國）"
-                    value={minguoYearShort}
-                  />
+                  <ReadOnlyField label="農曆年國字" value={lunarYearChineseDisplay} />
+                </div>
+                <div className="mt-3">
+                  <ReadOnlyField label="農曆出生年月日（送出內容）" value={lunarBirth} />
                 </div>
               </div>
             )}
-
-            <SelectField
-              label="時辰"
-              value={timeOfBirth}
-              onChange={setTimeOfBirth}
-              options={TIME_OPTIONS}
-              required
-            />
           </div>
 
           {/* ===== 地址資料 ===== */}
@@ -808,434 +828,129 @@ export default function FormPage() {
 
             {(city || district || address) && (
               <div className="mt-4">
-                <ReadOnlyField
-                  label="居住地址（自動組合）"
-                  value={residenceAddress}
-                />
+                <ReadOnlyField label="居住地址（自動組合）" value={residenceAddress} />
               </div>
             )}
           </div>
 
-          {/* ===== 公司資料 ===== */}
-          <div className="bg-white rounded-2xl shadow-md p-6 mb-6">
-            <SectionTitle title="公司資料" />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <SelectField
-                label="請問是否有公司行號？"
-                value={hasCompany}
-                onChange={setHasCompany}
-                options={YES_NO}
-                required
-              />
-              <div>{/* spacer */}</div>
-
-              {hasCompany === "是" && (
-                <>
-                  <TextField
-                    label="請輸入公司名稱"
-                    value={companyName}
-                    onChange={setCompanyName}
-                    placeholder="請輸入公司名稱"
+          {/* ===== 各項牌位 ===== */}
+          {TABLET_CONFIGS.map((cfg) => {
+            const t = tablets[cfg.key];
+            return (
+              <div key={cfg.key} className="bg-white rounded-2xl shadow-md p-6 mb-6">
+                <SectionTitle title={cfg.title} />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <SelectField
+                    label={`是否要參加${cfg.title}？`}
+                    value={t.wants}
+                    onChange={(v) => setTabletWants(cfg.key, v)}
+                    options={YES_NO}
                     required
                   />
-                  <TextField
-                    label="請輸入公司地址"
-                    value={companyAddress}
-                    onChange={setCompanyAddress}
-                    placeholder="請輸入公司地址"
-                    required
-                  />
-                </>
-              )}
-            </div>
-          </div>
+                  {t.wants === "是" && (
+                    <SelectField
+                      label="請選擇數量"
+                      value={t.count}
+                      onChange={(v) => setTabletCount(cfg.key, v)}
+                      options={COUNT_OPTIONS}
+                      required
+                    />
+                  )}
+                </div>
 
-          {/* ===== 聯絡資料 ===== */}
-          <div className="bg-white rounded-2xl shadow-md p-6 mb-6">
-            <SectionTitle title="聯絡資料" />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <SelectField
-                label="請問是否要收到資料郵件？"
-                value={wantsEmail}
-                onChange={setWantsEmail}
-                options={YES_NO}
-                required
-              />
-              {wantsEmail === "是" && (
-                <TextField
-                  label="Email"
-                  value={email}
-                  onChange={setEmail}
-                  placeholder="請輸入電子郵件"
-                  type="email"
-                  required
-                />
-              )}
-            </div>
-          </div>
-
-          {/* ===== 嬰靈牌位 ===== */}
-          <div className="bg-white rounded-2xl shadow-md p-6 mb-6">
-            <SectionTitle title="嬰靈牌位" />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <SelectField
-                label="是否要增購嬰靈牌位？"
-                value={wantsBabySpirit}
-                onChange={setWantsBabySpirit}
-                options={YES_NO}
-                required
-              />
-              {wantsBabySpirit === "是" && (
-                <SelectField
-                  label="請選擇嬰靈牌位數量"
-                  value={babySpiritCount}
-                  onChange={setBabySpiritCount}
-                  options={BABY_SPIRIT_COUNT_OPTIONS}
-                  required
-                />
-              )}
-            </div>
-
-            {wantsBabySpirit === "是" && babySpiritEntries.length > 0 && (
-              <div className="mt-6 space-y-4">
-                {babySpiritEntries.map((entry, idx) => (
-                  <div
-                    key={idx}
-                    className="border border-amber-200 rounded-xl p-4 bg-amber-50/30"
-                  >
-                    <p className="text-sm font-bold text-amber-800 mb-3">
-                      第 {idx + 1} 筆
-                    </p>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-1">
-                          嬰靈牌位
-                        </label>
-                        <input
-                          type="text"
-                          value={entry.name}
-                          onChange={(e) => {
-                            const updated = [...babySpiritEntries];
-                            updated[idx] = { ...updated[idx], name: e.target.value };
-                            setBabySpiritEntries(updated);
-                          }}
-                          placeholder="請輸入嬰靈姓名（可留白）"
-                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm shadow-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-200 focus:outline-none transition"
-                        />
-                        <p className="text-xs text-gray-400 mt-1">
-                          不可填寫「沒有」等無效內容
+                {t.wants === "是" && t.entries.length > 0 && (
+                  <div className="mt-6 space-y-4">
+                    {t.entries.map((entry, idx) => (
+                      <div
+                        key={idx}
+                        className="border border-amber-200 rounded-xl p-4 bg-amber-50/30"
+                      >
+                        <p className="text-sm font-bold text-amber-800 mb-3">
+                          第 {idx + 1} 筆
                         </p>
+                        <div
+                          className={`grid grid-cols-1 gap-4 ${
+                            cfg.fields.length >= 3
+                              ? "md:grid-cols-3"
+                              : "md:grid-cols-2"
+                          }`}
+                        >
+                          {cfg.fields.map((f) => (
+                            <div key={f.fieldId}>
+                              <label className="block text-sm font-semibold text-gray-700 mb-1">
+                                {f.label}
+                                {f.required && (
+                                  <span className="text-red-500 ml-1">*</span>
+                                )}
+                              </label>
+                              {f.hint && (
+                                <p className="text-xs text-gray-500 mb-2 leading-relaxed">
+                                  {f.hint}
+                                </p>
+                              )}
+                              <input
+                                type="text"
+                                value={entry[f.key]}
+                                onChange={(e) => {
+                                  const patch: Partial<TabletEntry> = {
+                                    [f.key]: e.target.value,
+                                  };
+                                  if (f.isAddress) patch.sameAsResidence = false;
+                                  if (f.sameAsMainName)
+                                    patch.sameAsMainName = false;
+                                  updateEntry(cfg.key, idx, patch);
+                                }}
+                                placeholder={f.placeholder}
+                                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm shadow-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-200 focus:outline-none transition"
+                              />
+                              {f.isAddress && (
+                                <label className="inline-flex items-center gap-2 mt-2 cursor-pointer select-none">
+                                  <input
+                                    type="checkbox"
+                                    checked={entry.sameAsResidence}
+                                    onChange={(e) =>
+                                      updateEntry(cfg.key, idx, {
+                                        sameAsResidence: e.target.checked,
+                                        address: e.target.checked
+                                          ? residenceAddress
+                                          : "",
+                                      })
+                                    }
+                                    className="h-4 w-4 rounded border-gray-300 text-amber-500 focus:ring-amber-400"
+                                  />
+                                  <span className="text-sm text-gray-600">
+                                    與居住地址相同
+                                  </span>
+                                </label>
+                              )}
+                              {f.sameAsMainName && (
+                                <label className="inline-flex items-center gap-2 mt-2 cursor-pointer select-none">
+                                  <input
+                                    type="checkbox"
+                                    checked={entry.sameAsMainName}
+                                    onChange={(e) =>
+                                      updateEntry(cfg.key, idx, {
+                                        sameAsMainName: e.target.checked,
+                                        [f.key]: e.target.checked ? name : "",
+                                      })
+                                    }
+                                    className="h-4 w-4 rounded border-gray-300 text-amber-500 focus:ring-amber-400"
+                                  />
+                                  <span className="text-sm text-gray-600">
+                                    與基本資料姓名相同
+                                  </span>
+                                </label>
+                              )}
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-1">
-                          地址
-                          <span className="text-red-500 ml-1">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          value={entry.address}
-                          onChange={(e) => {
-                            const updated = [...babySpiritEntries];
-                            updated[idx] = {
-                              ...updated[idx],
-                              address: e.target.value,
-                              sameAsResidence: false,
-                            };
-                            setBabySpiritEntries(updated);
-                          }}
-                          placeholder="請輸入地址"
-                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm shadow-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-200 focus:outline-none transition"
-                        />
-                        <label className="inline-flex items-center gap-2 mt-2 cursor-pointer select-none">
-                          <input
-                            type="checkbox"
-                            checked={entry.sameAsResidence}
-                            onChange={(e) => {
-                              const updated = [...babySpiritEntries];
-                              updated[idx] = {
-                                ...updated[idx],
-                                sameAsResidence: e.target.checked,
-                                address: e.target.checked
-                                  ? residenceAddress
-                                  : "",
-                              };
-                              setBabySpiritEntries(updated);
-                            }}
-                            className="h-4 w-4 rounded border-gray-300 text-amber-500 focus:ring-amber-400"
-                          />
-                          <span className="text-sm text-gray-600">
-                            與居住地址相同
-                          </span>
-                        </label>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-1">
-                          求薦者姓名
-                          <span className="text-red-500 ml-1">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          value={entry.recommenderName}
-                          onChange={(e) => {
-                            const updated = [...babySpiritEntries];
-                            updated[idx] = { ...updated[idx], recommenderName: e.target.value };
-                            setBabySpiritEntries(updated);
-                          }}
-                          placeholder="請輸入求薦者姓名"
-                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm shadow-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-200 focus:outline-none transition"
-                        />
-                        <label className="inline-flex items-center gap-2 mt-2 cursor-pointer select-none">
-                          <input
-                            type="checkbox"
-                            checked={entry.sameAsMainName}
-                            onChange={(e) => {
-                              const updated = [...babySpiritEntries];
-                              updated[idx] = {
-                                ...updated[idx],
-                                sameAsMainName: e.target.checked,
-                                recommenderName: e.target.checked ? name : "",
-                              };
-                              setBabySpiritEntries(updated);
-                            }}
-                            className="h-4 w-4 rounded border-gray-300 text-amber-500 focus:ring-amber-400"
-                          />
-                          <span className="text-sm text-gray-600">
-                            與基本資料姓名相同
-                          </span>
-                        </label>
-                      </div>
-                    </div>
+                    ))}
                   </div>
-                ))}
+                )}
               </div>
-            )}
-          </div>
-
-          {/* ===== 祖先牌位 ===== */}
-          <div className="bg-white rounded-2xl shadow-md p-6 mb-6">
-            <SectionTitle title="祖先牌位" />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <SelectField
-                label="是否要增購祖先牌位？"
-                value={wantsAncestor}
-                onChange={setWantsAncestor}
-                options={YES_NO}
-                required
-              />
-              {wantsAncestor === "是" && (
-                <SelectField
-                  label="請選擇祖先牌位數量"
-                  value={ancestorCount}
-                  onChange={setAncestorCount}
-                  options={BABY_SPIRIT_COUNT_OPTIONS}
-                  required
-                />
-              )}
-            </div>
-
-            {wantsAncestor === "是" && ancestorEntries.length > 0 && (
-              <div className="mt-6 space-y-4">
-                {ancestorEntries.map((entry, idx) => (
-                  <div
-                    key={idx}
-                    className="border border-amber-200 rounded-xl p-4 bg-amber-50/30"
-                  >
-                    <p className="text-sm font-bold text-amber-800 mb-3">
-                      第 {idx + 1} 筆
-                    </p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-1">
-                          祖先牌位
-                          <span className="text-red-500 ml-1">*</span>
-                        </label>
-                        <p className="text-xs text-gray-500 mb-2 leading-relaxed">
-                          • 報名「歷代祖先」請填寫 <span className="font-bold text-amber-700">姓氏</span><br />
-                          • 報名「指定祖先」請填寫 <span className="font-bold text-amber-700">祖先姓名</span>
-                        </p>
-                        <input
-                          type="text"
-                          value={entry.name}
-                          onChange={(e) => {
-                            const updated = [...ancestorEntries];
-                            updated[idx] = { ...updated[idx], name: e.target.value };
-                            setAncestorEntries(updated);
-                          }}
-                          placeholder="例：黃 或 黃OO"
-                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm shadow-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-200 focus:outline-none transition"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-1">
-                          牌位地址
-                          <span className="text-red-500 ml-1">*</span>
-                        </label>
-                        <p className="text-xs text-transparent mb-2 leading-relaxed select-none">
-                          • 報名「歷代祖先」請填寫姓氏
-                          <br />
-                          • 報名「指定祖先」請填寫祖先姓名
-                        </p>
-                        <input
-                          type="text"
-                          value={entry.address}
-                          onChange={(e) => {
-                            const updated = [...ancestorEntries];
-                            updated[idx] = {
-                              ...updated[idx],
-                              address: e.target.value,
-                              sameAsResidence: false,
-                            };
-                            setAncestorEntries(updated);
-                          }}
-                          placeholder="請輸入牌位地址"
-                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm shadow-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-200 focus:outline-none transition"
-                        />
-                        <label className="inline-flex items-center gap-2 mt-2 cursor-pointer select-none">
-                          <input
-                            type="checkbox"
-                            checked={entry.sameAsResidence}
-                            onChange={(e) => {
-                              const updated = [...ancestorEntries];
-                              updated[idx] = {
-                                ...updated[idx],
-                                sameAsResidence: e.target.checked,
-                                address: e.target.checked
-                                  ? residenceAddress
-                                  : "",
-                              };
-                              setAncestorEntries(updated);
-                            }}
-                            className="h-4 w-4 rounded border-gray-300 text-amber-500 focus:ring-amber-400"
-                          />
-                          <span className="text-sm text-gray-600">
-                            與居住地址相同
-                          </span>
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* ===== 冤親債主牌位 ===== */}
-          <div className="bg-white rounded-2xl shadow-md p-6 mb-6">
-            <SectionTitle title="冤親債主牌位" />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <SelectField
-                label="是否要增購冤親債主牌位？"
-                value={wantsKarmicCreditor}
-                onChange={setWantsKarmicCreditor}
-                options={YES_NO}
-                required
-              />
-              {wantsKarmicCreditor === "是" && (
-                <SelectField
-                  label="請選擇冤親債主牌位數量"
-                  value={karmicCreditorCount}
-                  onChange={setKarmicCreditorCount}
-                  options={BABY_SPIRIT_COUNT_OPTIONS}
-                  required
-                />
-              )}
-            </div>
-
-            {wantsKarmicCreditor === "是" && karmicCreditorEntries.length > 0 && (
-              <div className="mt-6 space-y-4">
-                {karmicCreditorEntries.map((entry, idx) => (
-                  <div
-                    key={idx}
-                    className="border border-amber-200 rounded-xl p-4 bg-amber-50/30"
-                  >
-                    <p className="text-sm font-bold text-amber-800 mb-3">
-                      第 {idx + 1} 筆
-                    </p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-1">
-                          求薦者姓名
-                          <span className="text-red-500 ml-1">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          value={entry.recommenderName}
-                          onChange={(e) => {
-                            const updated = [...karmicCreditorEntries];
-                            updated[idx] = { ...updated[idx], recommenderName: e.target.value };
-                            setKarmicCreditorEntries(updated);
-                          }}
-                          placeholder="請輸入求薦者姓名"
-                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm shadow-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-200 focus:outline-none transition"
-                        />
-                        <label className="inline-flex items-center gap-2 mt-2 cursor-pointer select-none">
-                          <input
-                            type="checkbox"
-                            checked={entry.sameAsMainName}
-                            onChange={(e) => {
-                              const updated = [...karmicCreditorEntries];
-                              updated[idx] = {
-                                ...updated[idx],
-                                sameAsMainName: e.target.checked,
-                                recommenderName: e.target.checked ? name : "",
-                              };
-                              setKarmicCreditorEntries(updated);
-                            }}
-                            className="h-4 w-4 rounded border-gray-300 text-amber-500 focus:ring-amber-400"
-                          />
-                          <span className="text-sm text-gray-600">
-                            與基本資料姓名相同
-                          </span>
-                        </label>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-1">
-                          居住地址
-                          <span className="text-red-500 ml-1">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          value={entry.address}
-                          onChange={(e) => {
-                            const updated = [...karmicCreditorEntries];
-                            updated[idx] = {
-                              ...updated[idx],
-                              address: e.target.value,
-                              sameAsResidence: false,
-                            };
-                            setKarmicCreditorEntries(updated);
-                          }}
-                          placeholder="請輸入居住地址"
-                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm shadow-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-200 focus:outline-none transition"
-                        />
-                        <label className="inline-flex items-center gap-2 mt-2 cursor-pointer select-none">
-                          <input
-                            type="checkbox"
-                            checked={entry.sameAsResidence}
-                            onChange={(e) => {
-                              const updated = [...karmicCreditorEntries];
-                              updated[idx] = {
-                                ...updated[idx],
-                                sameAsResidence: e.target.checked,
-                                address: e.target.checked
-                                  ? residenceAddress
-                                  : "",
-                              };
-                              setKarmicCreditorEntries(updated);
-                            }}
-                            className="h-4 w-4 rounded border-gray-300 text-amber-500 focus:ring-amber-400"
-                          />
-                          <span className="text-sm text-gray-600">
-                            與居住地址相同
-                          </span>
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+            );
+          })}
 
           {/* ===== 法會金額 ===== */}
           <div className="bg-white rounded-2xl shadow-md p-6 mb-6">
@@ -1243,19 +958,25 @@ export default function FormPage() {
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
               <div className="flex items-center justify-between">
                 <div className="text-sm text-gray-700 space-y-1">
-                  <p>基本費用（含第一組牌位）：NT$ 1,800</p>
-                  {allTabletTotal > 1 && (
-                    <p>加購牌位 ×{allTabletTotal - 1}：NT$ {((allTabletTotal - 1) * 1800).toLocaleString()}</p>
+                  <p>
+                    參加份數 ×{shares || 0}：NT$ {shareAmount.toLocaleString()}
+                  </p>
+                  {totalTabletRows > 0 && (
+                    <p>
+                      牌位 ×{totalTabletRows}（每組 NT$ {PRICE_PER_TABLET}）：NT${" "}
+                      {tabletAmount.toLocaleString()}
+                    </p>
                   )}
-                  {babySpiritTotal > 0 && (
-                    <p className="text-xs text-gray-500 ml-2">└ 嬰靈牌位 ×{babySpiritTotal}</p>
-                  )}
-                  {ancestorTotal > 0 && (
-                    <p className="text-xs text-gray-500 ml-2">└ 祖先牌位 ×{ancestorTotal}</p>
-                  )}
-                  {karmicCreditorTotal > 0 && (
-                    <p className="text-xs text-gray-500 ml-2">└ 冤親債主牌位 ×{karmicCreditorTotal}</p>
-                  )}
+                  {TABLET_CONFIGS.map((cfg) => {
+                    const t = tablets[cfg.key];
+                    const n = t.wants === "是" ? t.entries.length : 0;
+                    if (n === 0) return null;
+                    return (
+                      <p key={cfg.key} className="text-xs text-gray-500 ml-2">
+                        └ {cfg.title} ×{n}
+                      </p>
+                    );
+                  })}
                 </div>
                 <div className="text-right">
                   <p className="text-xs text-gray-500 mb-1">應付總額</p>
@@ -1266,24 +987,6 @@ export default function FormPage() {
               </div>
             </div>
           </div>
-
-          {/* ===== 自動計算欄位摘要 ===== */}
-          {(nicknameDisplay || companyAddressDisplay) && (
-            <div className="bg-white rounded-2xl shadow-md p-6 mb-6">
-              <SectionTitle title="其他自動欄位" />
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {nicknameDisplay && (
-                  <ReadOnlyField label="綽號顯示" value={nicknameDisplay} />
-                )}
-                {companyAddressDisplay && (
-                  <ReadOnlyField
-                    label="公司地址顯示"
-                    value={companyAddressDisplay}
-                  />
-                )}
-              </div>
-            </div>
-          )}
 
           {/* Submit */}
           <div className="text-center">

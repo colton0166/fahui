@@ -1,7 +1,44 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const RAGIC_URL =
-  "https://ap13.ragic.com/Xinfuge/supplement-treasury-data/80?api=true";
+  "https://ap13.ragic.com/Xinfuge/supplement-treasury-data/90?api=true";
+
+interface TabletEntry {
+  yangName?: string;
+  targetName?: string;
+  address?: string;
+}
+
+// 各牌位子表格 → Ragic 子表格 key 與欄位編號對應
+const SUBTABLE_MAP: Record<
+  string,
+  { subtableKey: string; fields: { yangName?: string; targetName?: string; address?: string } }
+> = {
+  quanjia: {
+    subtableKey: "1003673",
+    fields: { targetName: "1003657", address: "1003658" },
+  },
+  ancestor: {
+    subtableKey: "1003674",
+    fields: { yangName: "1003659", targetName: "1003660", address: "1003661" },
+  },
+  karmic: {
+    subtableKey: "1003675",
+    fields: { yangName: "1003662", address: "1003663" },
+  },
+  unborn: {
+    subtableKey: "1003676",
+    fields: { yangName: "1003664", targetName: "1003665", address: "1003666" },
+  },
+  friends: {
+    subtableKey: "1003677",
+    fields: { yangName: "1003667", targetName: "1003668", address: "1003669" },
+  },
+  pets: {
+    subtableKey: "1003678",
+    fields: { yangName: "1003670", targetName: "1003671", address: "1003672" },
+  },
+};
 
 export async function POST(request: NextRequest) {
   const apiKey = process.env.RAGIC_API_KEY;
@@ -17,78 +54,32 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     const ragicData: Record<string, any> = {
-      "1003285": body.totalAmount || "",
-      "1003286": body.name || "",
-      "1003287": "No",
-      "1003288": body.gender || "",
-      "1003289": body.hasNickname || "",
-      "1003290": body.country || "",
-      "1003291": body.nickname || "",
-      "1003292": body.city || "",
-      "1003293": body.lunarYear || "",
-      "1003294": body.district || "",
-      "1003295": body.lunarMonth || "",
-      "1003296": body.address || "",
-      "1003297": body.lunarDay || "",
-      "1003298": body.nicknameDisplay || "",
-      "1003299": body.timeOfBirth || "",
-      "1003300": body.residenceAddress || "",
-      "1003301": body.address2 || "",
-      "1003302": body.hasCompany || "",
-      "1003303": body.wantsEmail || "",
-      "1003304": body.companyName || "",
-      "1003305": body.email || "",
-      "1003306": body.companyAddress || "",
-      "1003307": body.ganZhiYear || "",
-      "1003308": body.age || "",
-      "1003309": body.lunarAge || "",
-      "1003310": body.lunarYearChinese || "",
-      "1003311": body.companyAddressDisplay || "",
-      "1003312": body.minguoYearShort || "",
+      "1003651": body.name || "",
+      "1003652": body.lunarBirth || "",
+      "1003653": body.residenceAddress || "",
+      "1003654": body.address2 || "",
+      "1003656": body.participationCount || "",
     };
 
-    // 嬰靈牌位子表格（負數 row ID）
-    if (body.babySpiritEntries && body.babySpiritEntries.length > 0) {
-      const subtable: Record<string, Record<string, string>> = {};
-      body.babySpiritEntries.forEach(
-        (entry: { name: string; address: string; recommenderName: string }, idx: number) => {
-          subtable[String(-(idx + 1))] = {
-            "1003346": entry.name || "",
-            "1003347": entry.address || "",
-            "1003388": entry.recommenderName || "",
-          };
-        }
-      );
-      ragicData["_subtable_1003350"] = subtable;
-    }
+    // 各牌位子表格（負數 row ID）
+    const tablets: Record<string, TabletEntry[]> = body.tablets || {};
+    Object.entries(SUBTABLE_MAP).forEach(([key, map]) => {
+      const entries = tablets[key];
+      if (!entries || entries.length === 0) return;
 
-    // 祖先牌位子表格（負數 row ID）
-    if (body.ancestorEntries && body.ancestorEntries.length > 0) {
       const subtable: Record<string, Record<string, string>> = {};
-      body.ancestorEntries.forEach(
-        (entry: { name: string; address: string }, idx: number) => {
-          subtable[String(-(idx + 1))] = {
-            "1003348": entry.name || "",
-            "1003349": entry.address || "",
-          };
-        }
-      );
-      ragicData["_subtable_1003351"] = subtable;
-    }
-
-    // 冤親債主牌位子表格（負數 row ID）
-    if (body.karmicCreditorEntries && body.karmicCreditorEntries.length > 0) {
-      const subtable: Record<string, Record<string, string>> = {};
-      body.karmicCreditorEntries.forEach(
-        (entry: { recommenderName: string; address: string }, idx: number) => {
-          subtable[String(-(idx + 1))] = {
-            "1003385": entry.recommenderName || "",
-            "1003386": entry.address || "",
-          };
-        }
-      );
-      ragicData["_subtable_1003387"] = subtable;
-    }
+      entries.forEach((entry, idx) => {
+        const row: Record<string, string> = {};
+        if (map.fields.yangName)
+          row[map.fields.yangName] = entry.yangName || "";
+        if (map.fields.targetName)
+          row[map.fields.targetName] = entry.targetName || "";
+        if (map.fields.address)
+          row[map.fields.address] = entry.address || "";
+        subtable[String(-(idx + 1))] = row;
+      });
+      ragicData[`_subtable_${map.subtableKey}`] = subtable;
+    });
 
     console.log("[Ragic Submit] body:", JSON.stringify(ragicData, null, 2));
 

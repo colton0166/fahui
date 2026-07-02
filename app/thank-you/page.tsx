@@ -11,7 +11,7 @@ export default function ThankYouPage() {
             您的報名資料已成功送出。
           </p>
           <p className="text-gray-600 mb-8 leading-relaxed">
-            感恩您參與清明慎終追遠法會，<br />
+            感恩您參與中元普渡法會，<br />
             祝福您闔家平安、萬事如意。
           </p>
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
