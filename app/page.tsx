@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { cities, districts } from "@/lib/locationData";
 
@@ -440,6 +440,7 @@ export default function FormPage() {
   } | null>(null);
 
   const [errors, setErrors] = useState<string[]>([]);
+  const errorRef = useRef<HTMLDivElement>(null);
 
   // Year options: 1912 ~ 2026
   const yearOptions = useMemo(() => {
@@ -646,7 +647,10 @@ export default function FormPage() {
     const validationErrors = validate();
     if (validationErrors.length > 0) {
       setErrors(validationErrors);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      // 等錯誤區塊渲染後再捲動定位到它
+      requestAnimationFrame(() => {
+        errorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
       return;
     }
     setErrors([]);
@@ -724,7 +728,10 @@ export default function FormPage() {
 
         {/* Error messages */}
         {errors.length > 0 && (
-          <div className="mb-6 bg-red-50 border border-red-200 rounded-xl p-4">
+          <div
+            ref={errorRef}
+            className="mb-6 bg-red-50 border border-red-200 rounded-xl p-4 scroll-mt-4"
+          >
             <p className="font-semibold text-red-700 mb-2">請修正以下問題：</p>
             <ul className="list-disc list-inside text-sm text-red-600 space-y-1">
               {errors.map((err, i) => (
