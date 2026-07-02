@@ -59,6 +59,7 @@ export async function POST(request: NextRequest) {
 
     const ragicData: Record<string, any> = {
       "1003651": body.name || "",
+      "1003683": body.gender || "",
       "1003652": body.lunarBirth || "",
       "1003653": body.residenceAddress || "",
       "1003654": body.address2 || "",

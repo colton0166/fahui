@@ -18,6 +18,7 @@ const COUNT_OPTIONS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"];
 const INVALID_SPIRIT_NAMES = ["沒有", "無", "沒", "不知道", "不知", "未知", "N/A", "na", "none", "null", "不清楚"];
 
 const YES_NO = ["是", "否"];
+const GENDER_OPTIONS = ["信士", "信女"];
 const TIME_OPTIONS = [
   "子", "丑", "寅", "卯", "辰", "巳",
   "午", "未", "申", "酉", "戌", "亥", "吉",
@@ -289,6 +290,7 @@ function SelectField({
   required,
   placeholder,
   disabled,
+  hidePlaceholder,
 }: {
   label: string;
   value: string;
@@ -297,6 +299,7 @@ function SelectField({
   required?: boolean;
   placeholder?: string;
   disabled?: boolean;
+  hidePlaceholder?: boolean;
 }) {
   return (
     <div>
@@ -310,7 +313,7 @@ function SelectField({
         disabled={disabled}
         className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm shadow-sm focus:border-red-500 focus:ring-2 focus:ring-red-200 focus:outline-none disabled:bg-gray-100 disabled:text-gray-500 transition"
       >
-        <option value="">{placeholder || "請選擇"}</option>
+        {!hidePlaceholder && <option value="">{placeholder || "請選擇"}</option>}
         {options.map((opt) => (
           <option key={opt} value={opt}>
             {opt}
@@ -386,6 +389,7 @@ function SectionTitle({ title }: { title: string }) {
 export default function FormPage() {
   const router = useRouter();
   const [name, setName] = useState("");
+  const [gender, setGender] = useState("");
 
   const [country, setCountry] = useState("");
   const [city, setCity] = useState("");
@@ -571,6 +575,7 @@ export default function FormPage() {
   function validate(): string[] {
     const errs: string[] = [];
     if (!name.trim()) errs.push("請輸入姓名");
+    if (!gender) errs.push("請選擇性別");
     if (!country) errs.push("請選擇國家");
     if (!birthYear || !birthMonth || !birthDay)
       errs.push("請選擇完整的國曆出生日期");
@@ -644,6 +649,7 @@ export default function FormPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name,
+          gender,
           lunarBirth,
           timeOfBirth,
           residenceAddress,
@@ -738,11 +744,19 @@ export default function FormPage() {
                 placeholder="請輸入姓名"
               />
               <SelectField
+                label="請選擇性別"
+                value={gender}
+                onChange={setGender}
+                options={GENDER_OPTIONS}
+                required
+              />
+              <SelectField
                 label="參加份數"
                 value={participationCount}
                 onChange={setParticipationCount}
                 options={COUNT_OPTIONS}
                 required
+                hidePlaceholder
               />
             </div>
           </div>
