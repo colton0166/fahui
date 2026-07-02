@@ -26,7 +26,17 @@ const TIME_OPTIONS = [
 
 // 金額規則：參加份數 1 份 = 1200，依此類推；每組牌位 +500
 const PRICE_PER_SHARE = 1200;
-const PRICE_PER_TABLET = 500;
+const PRICE_PER_TABLET = 500; // 一般加購牌位每份
+const PRICE_FAMILY = 1000; // 全戶消災每份
+const PRICE_PERSONAL = 500; // 個人消災每份
+
+// 單筆牌位金額：全家/個人消災依範圍計價，其餘固定 500
+function tabletRowPrice(tabletKey: string, entry: TabletEntry): number {
+  if (tabletKey === "quanjia") {
+    return entry.scope === "全家" ? PRICE_FAMILY : PRICE_PERSONAL;
+  }
+  return PRICE_PER_TABLET;
+}
 
 // ── 牌位子表格設定 ──────────────────────────────────────────
 type EntryKey = "scope" | "yangName" | "targetName" | "address";
@@ -537,7 +547,11 @@ export default function FormPage() {
     return sum + (t.wants === "是" ? t.entries.length : 0);
   }, 0);
   const shareAmount = shares * PRICE_PER_SHARE;
-  const tabletAmount = totalTabletRows * PRICE_PER_TABLET;
+  const tabletAmount = TABLET_CONFIGS.reduce((sum, c) => {
+    const t = tablets[c.key];
+    if (t.wants !== "是") return sum;
+    return sum + t.entries.reduce((s, e) => s + tabletRowPrice(c.key, e), 0);
+  }, 0);
   const totalAmount = shareAmount + tabletAmount;
 
   // ── 牌位 state 更新 helpers ──────────────────────────────
@@ -1131,18 +1145,19 @@ export default function FormPage() {
                     參加份數 ×{shares || 0}：NT$ {shareAmount.toLocaleString()}
                   </p>
                   {totalTabletRows > 0 && (
-                    <p>
-                      牌位 ×{totalTabletRows}（每組 NT$ {PRICE_PER_TABLET}）：NT${" "}
-                      {tabletAmount.toLocaleString()}
-                    </p>
+                    <p>加購牌位：NT$ {tabletAmount.toLocaleString()}</p>
                   )}
                   {TABLET_CONFIGS.map((cfg) => {
                     const t = tablets[cfg.key];
-                    const n = t.wants === "是" ? t.entries.length : 0;
-                    if (n === 0) return null;
+                    if (t.wants !== "是" || t.entries.length === 0) return null;
+                    const n = t.entries.length;
+                    const amount = t.entries.reduce(
+                      (s, e) => s + tabletRowPrice(cfg.key, e),
+                      0
+                    );
                     return (
                       <p key={cfg.key} className="text-xs text-gray-500 ml-2">
-                        └ {cfg.title} ×{n}
+                        └ {cfg.title} ×{n}：NT$ {amount.toLocaleString()}
                       </p>
                     );
                   })}
