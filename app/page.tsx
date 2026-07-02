@@ -977,7 +977,7 @@ export default function FormPage() {
                                 </p>
                               ) : hintPlaceholder ? (
                                 <p
-                                  className="text-xs text-transparent mb-2 leading-relaxed select-none"
+                                  className="text-xs mb-2 leading-relaxed select-none invisible"
                                   aria-hidden="true"
                                 >
                                   {hintPlaceholder}
