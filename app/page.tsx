@@ -94,9 +94,9 @@ const TABLET_CONFIGS: TabletConfig[] = [
         placeholder: "例：黃 或 黃OO",
         hint: (
           <>
-            • 報名「歷代祖先」請填寫 <span className="font-bold text-amber-700">姓氏</span>
+            • 報名「歷代祖先」請填寫 <span className="font-bold text-red-700">姓氏</span>
             <br />
-            • 報名「指定祖先」請填寫 <span className="font-bold text-amber-700">祖先姓名</span>
+            • 報名「指定祖先」請填寫 <span className="font-bold text-red-700">祖先姓名</span>
           </>
         ),
       },
@@ -291,7 +291,7 @@ function SelectField({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
-        className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm shadow-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-200 focus:outline-none disabled:bg-gray-100 disabled:text-gray-500 transition"
+        className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm shadow-sm focus:border-red-500 focus:ring-2 focus:ring-red-200 focus:outline-none disabled:bg-gray-100 disabled:text-gray-500 transition"
       >
         <option value="">{placeholder || "請選擇"}</option>
         {options.map((opt) => (
@@ -333,7 +333,7 @@ function TextField({
         onChange={(e) => onChange?.(e.target.value)}
         readOnly={readOnly}
         placeholder={placeholder}
-        className={`w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-200 focus:outline-none transition ${
+        className={`w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-red-500 focus:ring-2 focus:ring-red-200 focus:outline-none transition ${
           readOnly ? "bg-gray-50 text-gray-600 cursor-default" : "bg-white"
         }`}
       />
@@ -347,7 +347,7 @@ function ReadOnlyField({ label, value }: { label: string; value: string }) {
       <label className="block text-sm font-semibold text-gray-500 mb-1">
         {label}
       </label>
-      <div className="w-full rounded-lg border border-gray-200 bg-amber-50/50 px-3 py-2.5 text-sm text-gray-700 min-h-[40px]">
+      <div className="w-full rounded-lg border border-gray-200 bg-red-50/50 px-3 py-2.5 text-sm text-gray-700 min-h-[40px]">
         {value || "-"}
       </div>
     </div>
@@ -357,11 +357,11 @@ function ReadOnlyField({ label, value }: { label: string; value: string }) {
 function SectionTitle({ title }: { title: string }) {
   return (
     <div className="flex items-center gap-3 mb-4 mt-2">
-      <div className="h-px flex-1 bg-gradient-to-r from-amber-300 to-transparent" />
-      <h2 className="text-lg font-bold text-amber-800 whitespace-nowrap">
+      <div className="h-px flex-1 bg-gradient-to-r from-amber-400 to-transparent" />
+      <h2 className="text-lg font-bold text-red-800 whitespace-nowrap">
         {title}
       </h2>
-      <div className="h-px flex-1 bg-gradient-to-l from-amber-300 to-transparent" />
+      <div className="h-px flex-1 bg-gradient-to-l from-amber-400 to-transparent" />
     </div>
   );
 }
@@ -660,11 +660,16 @@ export default function FormPage() {
       <div className="max-w-3xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="inline-block bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 text-white px-8 py-4 rounded-2xl shadow-lg">
-            <h1 className="text-2xl md:text-3xl font-bold tracking-wide">
+          <div className="inline-block bg-gradient-to-b from-red-700 via-red-800 to-red-900 text-amber-100 px-10 py-5 rounded-2xl shadow-xl border-2 border-amber-400">
+            <p className="text-amber-300 text-sm tracking-[0.5em] mb-1">
+              盂蘭盆會
+            </p>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-wide text-amber-200 drop-shadow">
               中元普渡報名表
             </h1>
-            <p className="text-amber-100 text-sm mt-1">請詳細填寫以下資料</p>
+            <p className="text-amber-100/80 text-sm mt-2 tracking-widest">
+              普渡十方・慎終追遠
+            </p>
           </div>
         </div>
 
@@ -695,7 +700,7 @@ export default function FormPage() {
 
         <form onSubmit={handleSubmit}>
           {/* ===== 基本資料 ===== */}
-          <div className="bg-white rounded-2xl shadow-md p-6 mb-6">
+          <div className="bg-white rounded-2xl shadow-md p-6 mb-6 border-t-4 border-amber-400">
             <SectionTitle title="基本資料" />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <TextField
@@ -716,7 +721,7 @@ export default function FormPage() {
           </div>
 
           {/* ===== 出生資料 ===== */}
-          <div className="bg-white rounded-2xl shadow-md p-6 mb-6">
+          <div className="bg-white rounded-2xl shadow-md p-6 mb-6 border-t-4 border-amber-400">
             <SectionTitle title="出生資料" />
 
             <div className="bg-red-50 border border-red-300 rounded-xl p-4 mb-5 text-center">
@@ -735,7 +740,7 @@ export default function FormPage() {
                   <select
                     value={birthYear}
                     onChange={(e) => setBirthYear(e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm shadow-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-200 focus:outline-none transition"
+                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm shadow-sm focus:border-red-500 focus:ring-2 focus:ring-red-200 focus:outline-none transition"
                   >
                     <option value="">西元年</option>
                     {yearOptions.map((y) => (
@@ -749,7 +754,7 @@ export default function FormPage() {
                   <select
                     value={birthMonth}
                     onChange={(e) => setBirthMonth(e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm shadow-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-200 focus:outline-none transition"
+                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm shadow-sm focus:border-red-500 focus:ring-2 focus:ring-red-200 focus:outline-none transition"
                   >
                     <option value="">月</option>
                     {monthOptions.map((m) => (
@@ -763,7 +768,7 @@ export default function FormPage() {
                   <select
                     value={birthDay}
                     onChange={(e) => setBirthDay(e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm shadow-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-200 focus:outline-none transition"
+                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm shadow-sm focus:border-red-500 focus:ring-2 focus:ring-red-200 focus:outline-none transition"
                   >
                     <option value="">日</option>
                     {dayOptions.map((d) => (
@@ -777,7 +782,7 @@ export default function FormPage() {
             </div>
 
             {lunarLoading && (
-              <div className="text-sm text-amber-600 mb-3 flex items-center gap-2">
+              <div className="text-sm text-red-700 mb-3 flex items-center gap-2">
                 <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
                   <circle
                     className="opacity-25"
@@ -798,8 +803,8 @@ export default function FormPage() {
             )}
 
             {lunarData && (
-              <div className="bg-amber-50 rounded-xl border border-amber-200 p-4">
-                <p className="text-sm font-semibold text-amber-800 mb-3">
+              <div className="bg-red-50 rounded-xl border border-red-200 p-4">
+                <p className="text-sm font-semibold text-red-800 mb-3">
                   農曆轉換結果
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -828,7 +833,7 @@ export default function FormPage() {
           </div>
 
           {/* ===== 地址資料 ===== */}
-          <div className="bg-white rounded-2xl shadow-md p-6 mb-6">
+          <div className="bg-white rounded-2xl shadow-md p-6 mb-6 border-t-4 border-amber-400">
             <SectionTitle title="地址資料" />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <SelectField
@@ -881,7 +886,7 @@ export default function FormPage() {
           </div>
 
           {/* ===== 公司資料 ===== */}
-          <div className="bg-white rounded-2xl shadow-md p-6 mb-6">
+          <div className="bg-white rounded-2xl shadow-md p-6 mb-6 border-t-4 border-amber-400">
             <SectionTitle title="公司資料" />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <SelectField
@@ -918,7 +923,7 @@ export default function FormPage() {
           {TABLET_CONFIGS.map((cfg) => {
             const t = tablets[cfg.key];
             return (
-              <div key={cfg.key} className="bg-white rounded-2xl shadow-md p-6 mb-6">
+              <div key={cfg.key} className="bg-white rounded-2xl shadow-md p-6 mb-6 border-t-4 border-amber-400">
                 <SectionTitle title={cfg.title} />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <SelectField
@@ -944,9 +949,9 @@ export default function FormPage() {
                     {t.entries.map((entry, idx) => (
                       <div
                         key={idx}
-                        className="border border-amber-200 rounded-xl p-4 bg-amber-50/30"
+                        className="border border-red-200 rounded-xl p-4 bg-red-50/30"
                       >
-                        <p className="text-sm font-bold text-amber-800 mb-3">
+                        <p className="text-sm font-bold text-red-800 mb-3">
                           第 {idx + 1} 筆
                         </p>
                         <div
@@ -982,7 +987,7 @@ export default function FormPage() {
                                   updateEntry(cfg.key, idx, patch);
                                 }}
                                 placeholder={f.placeholder}
-                                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm shadow-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-200 focus:outline-none transition"
+                                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm shadow-sm focus:border-red-500 focus:ring-2 focus:ring-red-200 focus:outline-none transition"
                               />
                               {f.isAddress && (
                                 <label className="inline-flex items-center gap-2 mt-2 cursor-pointer select-none">
@@ -997,7 +1002,7 @@ export default function FormPage() {
                                           : "",
                                       })
                                     }
-                                    className="h-4 w-4 rounded border-gray-300 text-amber-500 focus:ring-amber-400"
+                                    className="h-4 w-4 rounded border-gray-300 text-red-600 focus:ring-red-400"
                                   />
                                   <span className="text-sm text-gray-600">
                                     與居住地址相同
@@ -1015,7 +1020,7 @@ export default function FormPage() {
                                         [f.key]: e.target.checked ? name : "",
                                       })
                                     }
-                                    className="h-4 w-4 rounded border-gray-300 text-amber-500 focus:ring-amber-400"
+                                    className="h-4 w-4 rounded border-gray-300 text-red-600 focus:ring-red-400"
                                   />
                                   <span className="text-sm text-gray-600">
                                     與基本資料姓名相同
@@ -1034,9 +1039,9 @@ export default function FormPage() {
           })}
 
           {/* ===== 法會金額 ===== */}
-          <div className="bg-white rounded-2xl shadow-md p-6 mb-6">
+          <div className="bg-white rounded-2xl shadow-md p-6 mb-6 border-t-4 border-amber-400">
             <SectionTitle title="法會金額" />
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+            <div className="bg-red-50 border border-red-200 rounded-xl p-4">
               <div className="flex items-center justify-between">
                 <div className="text-sm text-gray-700 space-y-1">
                   <p>
@@ -1061,7 +1066,7 @@ export default function FormPage() {
                 </div>
                 <div className="text-right">
                   <p className="text-xs text-gray-500 mb-1">應付總額</p>
-                  <p className="text-2xl font-bold text-amber-700">
+                  <p className="text-2xl font-bold text-red-700">
                     NT$ {totalAmount.toLocaleString()}
                   </p>
                 </div>
@@ -1074,7 +1079,7 @@ export default function FormPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold py-3 px-10 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-lg"
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-red-700 to-red-800 hover:from-red-800 hover:to-red-900 text-amber-200 font-bold py-3 px-10 rounded-xl shadow-lg hover:shadow-xl ring-1 ring-amber-400/60 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-lg"
             >
               {isSubmitting ? (
                 <>
