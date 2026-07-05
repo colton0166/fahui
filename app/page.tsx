@@ -386,6 +386,25 @@ function ReadOnlyField({ label, value }: { label: string; value: string }) {
   );
 }
 
+function SummaryRow({
+  label,
+  value,
+  small,
+}: {
+  label: string;
+  value: string;
+  small?: boolean;
+}) {
+  return (
+    <div className={`flex gap-2 ${small ? "text-xs" : "text-sm"}`}>
+      <span className="text-gray-500 shrink-0 w-28">{label}</span>
+      <span className="text-gray-800 font-medium break-words">
+        {value || "-"}
+      </span>
+    </div>
+  );
+}
+
 function SectionTitle({ title }: { title: string }) {
   return (
     <div className="flex items-center gap-3 mb-4 mt-2">
@@ -441,6 +460,7 @@ export default function FormPage() {
 
   const [errors, setErrors] = useState<string[]>([]);
   const errorRef = useRef<HTMLDivElement>(null);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   // Year options: 1912 ~ 2026
   const yearOptions = useMemo(() => {
@@ -640,7 +660,8 @@ export default function FormPage() {
     return errs;
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  // 點「提交資料」：先驗證，通過後跳出確認視窗
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitResult(null);
 
@@ -654,6 +675,12 @@ export default function FormPage() {
       return;
     }
     setErrors([]);
+    setShowConfirm(true);
+  }
+
+  // 確認視窗按「確認送出」：真正送出資料
+  async function handleConfirmSubmit() {
+    setSubmitResult(null);
 
     // 組合各牌位子表格資料
     const tabletPayload: Record<string, TabletEntry[]> = {};
@@ -687,12 +714,14 @@ export default function FormPage() {
         router.push("/thank-you");
       } else {
         const detail = result.detail ? `\n${result.detail}` : "";
+        setShowConfirm(false);
         setSubmitResult({
           success: false,
           message: `${result.error || "提交失敗，請稍後再試"}${detail}`,
         });
       }
     } catch {
+      setShowConfirm(false);
       setSubmitResult({ success: false, message: "網路錯誤，請稍後再試" });
     } finally {
       setIsSubmitting(false);
@@ -1222,6 +1251,156 @@ export default function FormPage() {
           </p>
         </form>
       </div>
+
+      {/* ===== 確認視窗 ===== */}
+      {showConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[88vh] flex flex-col overflow-hidden border-t-4 border-amber-400">
+            {/* 標題 */}
+            <div className="bg-gradient-to-b from-red-700 to-red-800 px-6 py-4">
+              <h2 className="text-lg font-bold text-amber-200 text-center tracking-widest">
+                請確認報名資料
+              </h2>
+              <p className="text-amber-100/70 text-xs text-center mt-1">
+                送出前請再次核對以下內容
+              </p>
+            </div>
+
+            {/* 內容 */}
+            <div className="p-6 space-y-5 overflow-y-auto">
+              {/* 基本資料 */}
+              <div>
+                <p className="font-bold text-red-800 text-sm mb-2 border-b border-red-100 pb-1">
+                  基本資料
+                </p>
+                <div className="space-y-1">
+                  <SummaryRow label="姓名" value={name} />
+                  <SummaryRow label="性別" value={gender} />
+                  <SummaryRow label="參加份數" value={`${participationCount} 份`} />
+                  <SummaryRow label="農曆出生年月日" value={lunarBirth} />
+                  <SummaryRow label="時辰" value={timeOfBirth} />
+                  <SummaryRow label="國家" value={country} />
+                  <SummaryRow label="居住地址" value={residenceAddress} />
+                  {address2 && <SummaryRow label="地址2" value={address2} />}
+                  <SummaryRow
+                    label="公司行號"
+                    value={
+                      hasCompany === "是"
+                        ? `${companyName}（${companyAddress}）`
+                        : "無"
+                    }
+                  />
+                </div>
+              </div>
+
+              {/* 各牌位 */}
+              {TABLET_CONFIGS.map((cfg) => {
+                const t = tablets[cfg.key];
+                if (t.wants !== "是" || t.entries.length === 0) return null;
+                return (
+                  <div key={cfg.key}>
+                    <p className="font-bold text-red-800 text-sm mb-2 border-b border-red-100 pb-1">
+                      {cfg.title}（{t.entries.length} 筆）
+                    </p>
+                    <div className="space-y-2">
+                      {t.entries.map((entry, i) => (
+                        <div
+                          key={i}
+                          className="rounded-lg bg-red-50/60 border border-red-100 p-3"
+                        >
+                          <p className="text-xs font-semibold text-red-700 mb-1">
+                            第 {i + 1} 筆
+                          </p>
+                          <div className="space-y-1">
+                            {cfg.fields.map((f) => (
+                              <SummaryRow
+                                key={f.fieldId}
+                                label={f.label}
+                                value={entry[f.key]}
+                                small
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* 金額 */}
+              <div>
+                <p className="font-bold text-red-800 text-sm mb-2 border-b border-red-100 pb-1">
+                  法會金額
+                </p>
+                <div className="space-y-1 text-sm text-gray-700">
+                  <div className="flex justify-between">
+                    <span>參加份數 ×{shares}</span>
+                    <span>NT$ {shareAmount.toLocaleString()}</span>
+                  </div>
+                  {totalTabletRows > 0 && (
+                    <div className="flex justify-between">
+                      <span>加購牌位</span>
+                      <span>NT$ {tabletAmount.toLocaleString()}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between items-center border-t border-red-100 pt-2 mt-1">
+                    <span className="font-bold text-red-800">應付總額</span>
+                    <span className="text-xl font-bold text-red-700">
+                      NT$ {totalAmount.toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 按鈕 */}
+            <div className="border-t border-gray-200 p-4 flex gap-3 bg-gray-50">
+              <button
+                type="button"
+                onClick={() => setShowConfirm(false)}
+                disabled={isSubmitting}
+                className="flex-1 rounded-xl border border-gray-300 bg-white text-gray-700 font-semibold py-3 hover:bg-gray-100 transition disabled:opacity-50"
+              >
+                返回修改
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmSubmit}
+                disabled={isSubmitting}
+                className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-red-700 to-red-800 hover:from-red-800 hover:to-red-900 text-amber-200 font-bold py-3 ring-1 ring-amber-400/60 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSubmitting ? (
+                  <>
+                    <svg
+                      className="animate-spin h-5 w-5"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                      />
+                    </svg>
+                    送出中...
+                  </>
+                ) : (
+                  "確認送出"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
