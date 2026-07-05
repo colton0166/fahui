@@ -19,9 +19,22 @@ const INVALID_SPIRIT_NAMES = ["沒有", "無", "沒", "不知道", "不知", "�
 
 const YES_NO = ["是", "否"];
 const GENDER_OPTIONS = ["信士", "信女"];
-const TIME_OPTIONS = [
-  "子", "丑", "寅", "卯", "辰", "巳",
-  "午", "未", "申", "酉", "戌", "亥", "吉",
+// 時辰：value 為送出值，label 為畫面顯示（子時分夜子時／早子時）
+const TIME_OPTIONS: { value: string; label: string }[] = [
+  { value: "早子時", label: "早子時（0-1）" },
+  { value: "丑", label: "丑" },
+  { value: "寅", label: "寅" },
+  { value: "卯", label: "卯" },
+  { value: "辰", label: "辰" },
+  { value: "巳", label: "巳" },
+  { value: "午", label: "午" },
+  { value: "未", label: "未" },
+  { value: "申", label: "申" },
+  { value: "酉", label: "酉" },
+  { value: "戌", label: "戌" },
+  { value: "亥", label: "亥" },
+  { value: "夜子時", label: "夜子時（23-0）" },
+  { value: "吉", label: "吉" },
 ];
 
 // 金額規則：參加份數 1 份 = 1200，依此類推；每組牌位 +500
@@ -946,13 +959,22 @@ export default function FormPage() {
             )}
 
             <div className="mt-4">
-              <SelectField
-                label="時辰"
+              <label className="block text-sm font-semibold text-gray-700 mb-1">
+                時辰
+                <span className="text-red-500 ml-1">*</span>
+              </label>
+              <select
                 value={timeOfBirth}
-                onChange={setTimeOfBirth}
-                options={TIME_OPTIONS}
-                required
-              />
+                onChange={(e) => setTimeOfBirth(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm shadow-sm focus:border-red-500 focus:ring-2 focus:ring-red-200 focus:outline-none transition"
+              >
+                <option value="">請選擇</option>
+                {TIME_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
