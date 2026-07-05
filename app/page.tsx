@@ -54,6 +54,12 @@ interface TabletFieldConfig {
   allowBlankName?: boolean; // 允許留白（僅檢查無效字詞）
   hint?: React.ReactNode;
   placeholder?: string;
+  // 依同一筆其他欄位動態調整標籤／提示（例如超薦祖先依類別切換）
+  dynamic?: (entry: TabletEntry) => {
+    label?: string;
+    placeholder?: string;
+    hint?: React.ReactNode;
+  };
 }
 
 interface TabletConfig {
@@ -100,6 +106,13 @@ const TABLET_CONFIGS: TabletConfig[] = [
     subtableKey: "1003674",
     fields: [
       {
+        key: "scope",
+        fieldId: "ancestor_category",
+        label: "祖先類別",
+        required: true,
+        options: ["單位祖先", "歷代祖先"],
+      },
+      {
         key: "yangName",
         fieldId: "1003659",
         label: "陽上超薦人",
@@ -112,14 +125,19 @@ const TABLET_CONFIGS: TabletConfig[] = [
         fieldId: "1003660",
         label: "超薦祖先姓氏或姓名",
         required: true,
-        placeholder: "例：黃 或 黃OO",
-        hint: (
-          <>
-            • 報名「歷代祖先」請填寫 <span className="font-bold text-red-700">姓氏</span>
-            <br />
-            • 報名「指定祖先」請填寫 <span className="font-bold text-red-700">祖先姓名</span>
-          </>
-        ),
+        placeholder: "請先選擇上方祖先類別",
+        dynamic: (e) =>
+          e.scope === "歷代祖先"
+            ? {
+                label: "祖先姓氏",
+                placeholder: "請輸入姓氏（例：黃）",
+              }
+            : e.scope === "單位祖先"
+            ? {
+                label: "祖先完整姓名",
+                placeholder: "請輸入完整姓名（例：黃大明）",
+              }
+            : { placeholder: "請先選擇上方祖先類別" },
       },
       {
         key: "address",
@@ -686,7 +704,19 @@ export default function FormPage() {
     const tabletPayload: Record<string, TabletEntry[]> = {};
     TABLET_CONFIGS.forEach((cfg) => {
       const t = tablets[cfg.key];
-      tabletPayload[cfg.key] = t.wants === "是" ? t.entries : [];
+      if (t.wants !== "是") {
+        tabletPayload[cfg.key] = [];
+        return;
+      }
+      if (cfg.key === "ancestor") {
+        // 超薦祖先：把「單位祖先／歷代祖先」類別前置到姓名值一起送出
+        tabletPayload[cfg.key] = t.entries.map((e) => ({
+          ...e,
+          targetName: e.scope ? `${e.scope}：${e.targetName}` : e.targetName,
+        }));
+      } else {
+        tabletPayload[cfg.key] = t.entries;
+      }
     });
 
     setIsSubmitting(true);
@@ -1051,22 +1081,30 @@ export default function FormPage() {
                         </p>
                         <div
                           className={`grid grid-cols-1 gap-4 ${
-                            cfg.fields.length >= 3
+                            cfg.fields.length === 4
+                              ? "md:grid-cols-2"
+                              : cfg.fields.length >= 3
                               ? "md:grid-cols-3"
                               : "md:grid-cols-2"
                           }`}
                         >
-                          {cfg.fields.map((f) => (
+                          {cfg.fields.map((f) => {
+                            const dyn = f.dynamic ? f.dynamic(entry) : null;
+                            const fieldLabel = dyn?.label ?? f.label;
+                            const fieldHint = dyn?.hint ?? f.hint;
+                            const fieldPlaceholder =
+                              dyn?.placeholder ?? f.placeholder;
+                            return (
                             <div key={f.fieldId}>
                               <label className="block text-sm font-semibold text-gray-700 mb-1">
-                                {f.label}
+                                {fieldLabel}
                                 {f.required && (
                                   <span className="text-red-500 ml-1">*</span>
                                 )}
                               </label>
-                              {f.hint ? (
+                              {fieldHint ? (
                                 <p className="text-xs text-gray-500 mb-2 leading-relaxed">
-                                  {f.hint}
+                                  {fieldHint}
                                 </p>
                               ) : hintPlaceholder ? (
                                 <p
@@ -1107,7 +1145,7 @@ export default function FormPage() {
                                       patch.sameAsMainName = false;
                                     updateEntry(cfg.key, idx, patch);
                                   }}
-                                  placeholder={f.placeholder}
+                                  placeholder={fieldPlaceholder}
                                   className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm shadow-sm focus:border-red-500 focus:ring-2 focus:ring-red-200 focus:outline-none transition"
                                 />
                               )}
@@ -1163,7 +1201,8 @@ export default function FormPage() {
                                 </label>
                               )}
                             </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       </div>
                     ))}
