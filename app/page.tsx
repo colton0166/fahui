@@ -21,7 +21,7 @@ const YES_NO = ["是", "否"];
 const GENDER_OPTIONS = ["信士", "信女"];
 // 時辰：value 為送出值，label 為畫面顯示（子時分夜子時／早子時）
 const TIME_OPTIONS: { value: string; label: string }[] = [
-  { value: "早子時", label: "早子時（0-1）" },
+  { value: "早子", label: "早子時（0-1）" },
   { value: "丑", label: "丑" },
   { value: "寅", label: "寅" },
   { value: "卯", label: "卯" },
@@ -33,7 +33,7 @@ const TIME_OPTIONS: { value: string; label: string }[] = [
   { value: "酉", label: "酉" },
   { value: "戌", label: "戌" },
   { value: "亥", label: "亥" },
-  { value: "夜子時", label: "夜子時（23-0）" },
+  { value: "夜子", label: "夜子時（23-0）" },
   { value: "吉", label: "吉" },
 ];
 
