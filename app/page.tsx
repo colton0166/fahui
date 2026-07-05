@@ -54,11 +54,12 @@ interface TabletFieldConfig {
   allowBlankName?: boolean; // 允許留白（僅檢查無效字詞）
   hint?: React.ReactNode;
   placeholder?: string;
-  // 依同一筆其他欄位動態調整標籤／提示（例如超薦祖先依類別切換）
+  // 依同一筆其他欄位動態調整標籤／提示／唯讀（例如超薦祖先依類別切換）
   dynamic?: (entry: TabletEntry) => {
     label?: string;
     placeholder?: string;
     hint?: React.ReactNode;
+    readOnly?: boolean;
   };
 }
 
@@ -137,7 +138,7 @@ const TABLET_CONFIGS: TabletConfig[] = [
                 label: "祖先完整姓名",
                 placeholder: "請輸入完整姓名（例：黃大明）",
               }
-            : { placeholder: "請先選擇上方祖先類別" },
+            : { placeholder: "請先選擇上方祖先類別", readOnly: true },
       },
       {
         key: "address",
@@ -1094,6 +1095,7 @@ export default function FormPage() {
                             const fieldHint = dyn?.hint ?? f.hint;
                             const fieldPlaceholder =
                               dyn?.placeholder ?? f.placeholder;
+                            const fieldReadOnly = dyn?.readOnly ?? false;
                             return (
                             <div key={f.fieldId}>
                               <label className="block text-sm font-semibold text-gray-700 mb-1">
@@ -1135,6 +1137,7 @@ export default function FormPage() {
                                 <input
                                   type="text"
                                   value={entry[f.key]}
+                                  readOnly={fieldReadOnly}
                                   onChange={(e) => {
                                     const patch: Partial<TabletEntry> = {
                                       [f.key]: e.target.value,
@@ -1146,7 +1149,11 @@ export default function FormPage() {
                                     updateEntry(cfg.key, idx, patch);
                                   }}
                                   placeholder={fieldPlaceholder}
-                                  className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm shadow-sm focus:border-red-500 focus:ring-2 focus:ring-red-200 focus:outline-none transition"
+                                  className={`w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-red-500 focus:ring-2 focus:ring-red-200 focus:outline-none transition ${
+                                    fieldReadOnly
+                                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                                      : "bg-white"
+                                  }`}
                                 />
                               )}
                               {f.isAddress && (
