@@ -187,6 +187,29 @@ const TABLET_CONFIGS: TabletConfig[] = [
     ],
   },
   {
+    key: "diji",
+    title: "超薦地基主牌位",
+    subtableKey: "1003712",
+    fields: [
+      {
+        key: "yangName",
+        fieldId: "1003710",
+        label: "超薦人",
+        required: true,
+        sameAsMainName: true,
+        placeholder: "請輸入超薦人姓名",
+      },
+      {
+        key: "address",
+        fieldId: "1003711",
+        label: "地基主地址",
+        required: true,
+        isAddress: true,
+        placeholder: "請輸入地基主地址",
+      },
+    ],
+  },
+  {
     key: "unborn",
     title: "超薦無緣子女（嬰靈）牌位",
     subtableKey: "1003676",

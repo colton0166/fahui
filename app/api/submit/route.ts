@@ -30,6 +30,10 @@ const SUBTABLE_MAP: Record<
     subtableKey: "1003675",
     fields: { yangName: "1003662", address: "1003663" },
   },
+  diji: {
+    subtableKey: "1003712",
+    fields: { yangName: "1003710", address: "1003711" },
+  },
   unborn: {
     subtableKey: "1003676",
     fields: { yangName: "1003664", targetName: "1003665", address: "1003666" },
