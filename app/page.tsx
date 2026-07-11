@@ -811,15 +811,6 @@ export default function FormPage() {
               普渡十方・慎終追遠
             </p>
           </div>
-
-          {/* 活動海報 */}
-          <div className="mt-6">
-            <img
-              src="/poster.jpg"
-              alt="慶讚中元 中元普渡祈福海報"
-              className="mx-auto w-full max-w-md rounded-2xl shadow-xl border-2 border-amber-400"
-            />
-          </div>
         </div>
 
         {/* Error messages */}
@@ -1340,6 +1331,15 @@ export default function FormPage() {
           <p className="text-center text-xs text-gray-400 mt-4 mb-8">
             提交後資料將自動回傳至系統
           </p>
+
+          {/* 活動海報 */}
+          <div className="mt-8">
+            <img
+              src="/poster.jpg"
+              alt="慶讚中元 中元普渡祈福海報"
+              className="mx-auto w-full max-w-md rounded-2xl shadow-xl border-2 border-amber-400"
+            />
+          </div>
         </form>
       </div>
 
