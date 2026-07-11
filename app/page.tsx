@@ -516,6 +516,8 @@ export default function FormPage() {
   const [errors, setErrors] = useState<string[]>([]);
   const errorRef = useRef<HTMLDivElement>(null);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [agreed, setAgreed] = useState(false);
+  const [showPrivacy, setShowPrivacy] = useState(false);
 
   // Year options: 1912 ~ 2026
   const yearOptions = useMemo(() => {
@@ -668,6 +670,7 @@ export default function FormPage() {
     const errs: string[] = [];
     if (!name.trim()) errs.push("請輸入姓名");
     if (!gender) errs.push("請選擇性別");
+    if (!agreed) errs.push("請閱讀並勾選同意隱私權政策");
     if (!country) errs.push("請選擇國家");
     if (!birthYear || !birthMonth || !birthDay)
       errs.push("請選擇完整的國曆出生日期");
@@ -1292,6 +1295,30 @@ export default function FormPage() {
             </div>
           </div>
 
+          {/* 同意隱私權政策 */}
+          <div className="bg-white rounded-2xl shadow-md p-6 mb-6 border-t-4 border-amber-400">
+            <label className="flex items-start gap-3 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={agreed}
+                onChange={(e) => setAgreed(e.target.checked)}
+                className="h-5 w-5 mt-0.5 shrink-0 rounded border-gray-300 text-red-600 focus:ring-red-400"
+              />
+              <span className="text-sm text-gray-700 leading-relaxed">
+                我已詳細閱讀並同意
+                <button
+                  type="button"
+                  onClick={() => setShowPrivacy(true)}
+                  className="text-red-700 font-semibold underline underline-offset-2 mx-1 hover:text-red-800"
+                >
+                  《隱私權政策》
+                </button>
+                ，並同意主辦單位為法會報名及超薦事宜蒐集、處理及利用本表所填之個人資料。
+                <span className="text-red-500 ml-1">*</span>
+              </span>
+            </label>
+          </div>
+
           {/* Submit */}
           <div className="text-center">
             <button
@@ -1487,6 +1514,101 @@ export default function FormPage() {
                 ) : (
                   "確認送出"
                 )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== 隱私權政策 ===== */}
+      {showPrivacy && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[88vh] flex flex-col overflow-hidden border-t-4 border-amber-400">
+            <div className="bg-gradient-to-b from-red-700 to-red-800 px-6 py-4">
+              <h2 className="text-lg font-bold text-amber-200 text-center tracking-widest">
+                隱私權政策
+              </h2>
+              <p className="text-amber-100/70 text-xs text-center mt-1">
+                鑫富閣財樂宮 中元普渡報名
+              </p>
+            </div>
+
+            <div className="p-6 overflow-y-auto text-sm text-gray-700 leading-relaxed space-y-4">
+              <p>
+                鑫富閣財樂宮（以下簡稱「本宮」）非常重視您的個人資料保護。當您填寫本中元普渡報名表時，即表示您已閱讀、瞭解並同意本隱私權政策之所有內容。本政策依《個人資料保護法》相關規定訂定。
+              </p>
+
+              <div>
+                <p className="font-bold text-red-800 mb-1">一、蒐集之個人資料項目</p>
+                <p>
+                  為辦理法會報名與超薦事宜，本宮將蒐集您所填寫之資料，包括：報名人姓名、性別、農曆出生年月日、時辰、聯絡地址、公司名稱與地址；以及各項牌位所填之超薦／陽上人員姓名與地址（例如祖先、冤親債主、地基主、無緣子女、親朋好友、寵物等超薦對象資訊）。
+                </p>
+              </div>
+
+              <div>
+                <p className="font-bold text-red-800 mb-1">二、蒐集目的與利用方式</p>
+                <p>
+                  所蒐集之個人資料僅供本宮辦理中元普渡法會報名、牌位製作、超薦誦經、法會通知與相關聯繫之用，不會用於前述目的以外之用途。
+                </p>
+              </div>
+
+              <div>
+                <p className="font-bold text-red-800 mb-1">三、資料之保存與保護</p>
+                <p>
+                  您的資料將儲存於本宮委託之雲端表單系統（Ragic），並採取適當之安全措施防止未經授權之存取。資料保存期間為法會辦理所需之期間，逾期或目的消失後將予以刪除或去識別化。
+                </p>
+              </div>
+
+              <div>
+                <p className="font-bold text-red-800 mb-1">四、資料之提供與揭露</p>
+                <p>
+                  除法令另有規定或經您同意外，本宮不會將您的個人資料提供、揭露或出售予第三人。
+                </p>
+              </div>
+
+              <div>
+                <p className="font-bold text-red-800 mb-1">五、您的權利</p>
+                <p>
+                  依《個人資料保護法》第三條，您就本宮保有之個人資料得行使下列權利：查詢或請求閱覽、請求製給複製本、請求補充或更正、請求停止蒐集處理利用，以及請求刪除。如欲行使上述權利，請與本宮聯繫。
+                </p>
+              </div>
+
+              <div>
+                <p className="font-bold text-red-800 mb-1">六、同意與撤回</p>
+                <p>
+                  您可自由選擇是否提供個人資料，惟若不提供必要資料，本宮將無法為您完成法會報名與超薦。您得隨時撤回同意，惟撤回不影響撤回前已進行之處理。
+                </p>
+              </div>
+
+              <div>
+                <p className="font-bold text-red-800 mb-1">七、政策修訂</p>
+                <p>
+                  本宮保留隨時修訂本隱私權政策之權利，修訂後將公告於報名頁面，恕不另行個別通知。
+                </p>
+              </div>
+
+              <p className="text-xs text-gray-500">
+                如對本政策有任何疑問，請聯絡主辦單位。
+              </p>
+            </div>
+
+            <div className="border-t border-gray-200 p-4 flex gap-3 bg-gray-50">
+              <button
+                type="button"
+                onClick={() => setShowPrivacy(false)}
+                className="flex-1 rounded-xl border border-gray-300 bg-white text-gray-700 font-semibold py-3 hover:bg-gray-100 transition"
+              >
+                關閉
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setAgreed(true);
+                  setShowPrivacy(false);
+                }}
+                className="flex-1 rounded-xl bg-gradient-to-r from-red-700 to-red-800 hover:from-red-800 hover:to-red-900 text-amber-200 font-bold py-3 ring-1 ring-amber-400/60 transition"
+              >
+                我已閱讀並同意
               </button>
             </div>
           </div>
