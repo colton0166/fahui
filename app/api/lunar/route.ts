@@ -8,7 +8,7 @@ function loadLunarData() {
   if (lunarCache) return lunarCache;
   const filePath = path.join(
     process.cwd(),
-    "lunar_data_1910_2059_立春切歲22.json"
+    "lunar_data_1910_2100_立春切歲22.json"
   );
   const raw = fs.readFileSync(filePath, "utf-8");
   lunarCache = JSON.parse(raw);
