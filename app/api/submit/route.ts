@@ -94,8 +94,6 @@ export async function POST(request: NextRequest) {
       ragicData[`_subtable_${map.subtableKey}`] = subtable;
     });
 
-    console.log("[Ragic Submit] body:", JSON.stringify(ragicData, null, 2));
-
     // 此表單以 APIKey query 參數認證（Basic auth 會被視為 guest 而回傳 106）
     const submitUrl = `${RAGIC_URL}&APIKey=${encodeURIComponent(apiKey)}`;
     const response = await fetch(submitUrl, {
@@ -107,7 +105,6 @@ export async function POST(request: NextRequest) {
     });
 
     const result = await response.text();
-    console.log("[Ragic Submit] status:", response.status, "response:", result);
 
     if (!response.ok) {
       return NextResponse.json(
