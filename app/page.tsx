@@ -474,6 +474,9 @@ function SectionTitle({ title }: { title: string }) {
 
 export default function FormPage() {
   const router = useRouter();
+  // 公司行號普渡：姓名／地址改為公司名稱／公司地址，且免填性別與出生資料
+  const [isCompany, setIsCompany] = useState("");
+  const companyMode = isCompany === "是";
   const [name, setName] = useState("");
   const [gender, setGender] = useState("");
 
@@ -598,6 +601,19 @@ export default function FormPage() {
     }
   }, [hasCompany]);
 
+  // 切換為公司行號普渡時，清掉個人專屬欄位（性別、出生資料、公司資料區）
+  useEffect(() => {
+    if (isCompany !== "是") return;
+    setGender("");
+    setBirthYear("");
+    setBirthMonth("");
+    setBirthDay("");
+    setTimeOfBirth("");
+    setHasCompany("");
+    setCompanyName("");
+    setCompanyAddress("");
+  }, [isCompany]);
+
   // Adjust day if exceeds max
   useEffect(() => {
     if (birthDay && dayOptions.length > 0) {
@@ -668,20 +684,26 @@ export default function FormPage() {
 
   function validate(): string[] {
     const errs: string[] = [];
-    if (!name.trim()) errs.push("請輸入姓名");
-    if (!gender) errs.push("請選擇性別");
+    if (!isCompany) errs.push("請選擇是否為公司行號做普渡");
+    if (!name.trim()) errs.push(companyMode ? "請輸入公司名稱" : "請輸入姓名");
     if (!agreed) errs.push("請閱讀並勾選同意隱私權政策");
     if (!country) errs.push("請選擇國家");
-    if (!birthYear || !birthMonth || !birthDay)
-      errs.push("請選擇完整的國曆出生日期");
-    if (!lunarYear) errs.push("無法取得農曆資料，請確認出生日期");
-    if (!timeOfBirth) errs.push("請選擇時辰");
-    if (country === "臺灣" && !address.trim()) errs.push("請輸入地址");
+    if (!companyMode) {
+      if (!gender) errs.push("請選擇性別");
+      if (!birthYear || !birthMonth || !birthDay)
+        errs.push("請選擇完整的國曆出生日期");
+      if (!lunarYear) errs.push("無法取得農曆資料，請確認出生日期");
+      if (!timeOfBirth) errs.push("請選擇時辰");
+    }
+    if (country === "臺灣" && !address.trim())
+      errs.push(companyMode ? "請輸入公司地址" : "請輸入地址");
     if (!participationCount) errs.push("請選擇參加份數");
-    if (!hasCompany) errs.push("請選擇是否有公司行號");
-    if (hasCompany === "是") {
-      if (!companyName.trim()) errs.push("請輸入公司名稱");
-      if (!companyAddress.trim()) errs.push("請輸入公司地址");
+    if (!companyMode) {
+      if (!hasCompany) errs.push("請選擇是否有公司行號");
+      if (hasCompany === "是") {
+        if (!companyName.trim()) errs.push("請輸入公司名稱");
+        if (!companyAddress.trim()) errs.push("請輸入公司地址");
+      }
     }
 
     TABLET_CONFIGS.forEach((cfg) => {
@@ -765,15 +787,17 @@ export default function FormPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          // 公司行號普渡：公司名稱／地址沿用姓名與居住地址欄位，性別與出生資料留空
           name,
-          gender,
-          lunarBirth,
-          timeOfBirth,
+          gender: companyMode ? "" : gender,
+          lunarBirth: companyMode ? "" : lunarBirth,
+          timeOfBirth: companyMode ? "" : timeOfBirth,
           residenceAddress,
           address2,
           participationCount,
-          companyName: hasCompany === "是" ? companyName : "",
-          companyAddress: hasCompany === "是" ? companyAddress : "",
+          companyName: !companyMode && hasCompany === "是" ? companyName : "",
+          companyAddress:
+            !companyMode && hasCompany === "是" ? companyAddress : "",
           tablets: tabletPayload,
         }),
       });
@@ -849,20 +873,31 @@ export default function FormPage() {
           <div className="bg-white rounded-2xl shadow-md p-6 mb-6 border-t-4 border-amber-400">
             <SectionTitle title="基本資料" />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <SelectField
+                label="是否為公司行號做普渡？"
+                value={isCompany}
+                onChange={setIsCompany}
+                options={YES_NO}
+                required
+              />
+              <div>{/* spacer */}</div>
+
               <TextField
-                label="姓名"
+                label={companyMode ? "公司名稱" : "姓名"}
                 value={name}
                 onChange={setName}
                 required
-                placeholder="請輸入姓名"
+                placeholder={companyMode ? "請輸入公司名稱" : "請輸入姓名"}
               />
-              <SelectField
-                label="請選擇性別"
-                value={gender}
-                onChange={setGender}
-                options={GENDER_OPTIONS}
-                required
-              />
+              {!companyMode && (
+                <SelectField
+                  label="請選擇性別"
+                  value={gender}
+                  onChange={setGender}
+                  options={GENDER_OPTIONS}
+                  required
+                />
+              )}
               <SelectField
                 label="參加份數"
                 value={participationCount}
@@ -874,7 +909,8 @@ export default function FormPage() {
             </div>
           </div>
 
-          {/* ===== 出生資料 ===== */}
+          {/* ===== 出生資料（公司行號普渡免填） ===== */}
+          {!companyMode && (
           <div className="bg-white rounded-2xl shadow-md p-6 mb-6 border-t-4 border-amber-400">
             <SectionTitle title="出生資料" />
 
@@ -994,10 +1030,11 @@ export default function FormPage() {
               </select>
             </div>
           </div>
+          )}
 
           {/* ===== 地址資料 ===== */}
           <div className="bg-white rounded-2xl shadow-md p-6 mb-6 border-t-4 border-amber-400">
-            <SectionTitle title="地址資料" />
+            <SectionTitle title={companyMode ? "公司地址資料" : "地址資料"} />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <SelectField
                 label="請選擇國家"
@@ -1027,11 +1064,13 @@ export default function FormPage() {
               )}
 
               <TextField
-                label="地址"
+                label={companyMode ? "公司地址" : "地址"}
                 value={address}
                 onChange={setAddress}
                 required={country === "臺灣"}
-                placeholder="請輸入詳細地址"
+                placeholder={
+                  companyMode ? "請輸入公司詳細地址" : "請輸入詳細地址"
+                }
               />
               <TextField
                 label="地址2（選填）"
@@ -1043,12 +1082,18 @@ export default function FormPage() {
 
             {(city || district || address) && (
               <div className="mt-4">
-                <ReadOnlyField label="居住地址（自動組合）" value={residenceAddress} />
+                <ReadOnlyField
+                  label={
+                    companyMode ? "公司地址（自動組合）" : "居住地址（自動組合）"
+                  }
+                  value={residenceAddress}
+                />
               </div>
             )}
           </div>
 
-          {/* ===== 公司資料 ===== */}
+          {/* ===== 公司資料（公司行號普渡時本身即為公司，不再重複詢問） ===== */}
+          {!companyMode && (
           <div className="bg-white rounded-2xl shadow-md p-6 mb-6 border-t-4 border-amber-400">
             <SectionTitle title="公司資料" />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1081,6 +1126,7 @@ export default function FormPage() {
               )}
             </div>
           </div>
+          )}
 
           {/* ===== 各項牌位 ===== */}
           {TABLET_CONFIGS.map((cfg) => {
@@ -1211,7 +1257,9 @@ export default function FormPage() {
                                     className="h-4 w-4 rounded border-gray-300 text-red-600 focus:ring-red-400"
                                   />
                                   <span className="text-sm text-gray-600">
-                                    與居住地址相同
+                                    {companyMode
+                                      ? "與公司地址相同"
+                                      : "與居住地址相同"}
                                   </span>
                                 </label>
                               )}
@@ -1229,7 +1277,9 @@ export default function FormPage() {
                                     className="h-4 w-4 rounded border-gray-300 text-red-600 focus:ring-red-400"
                                   />
                                   <span className="text-sm text-gray-600">
-                                    與基本資料姓名相同
+                                    {companyMode
+                                      ? "與公司名稱相同"
+                                      : "與基本資料姓名相同"}
                                   </span>
                                 </label>
                               )}
@@ -1392,22 +1442,38 @@ export default function FormPage() {
                   基本資料
                 </p>
                 <div className="space-y-1">
-                  <SummaryRow label="姓名" value={name} />
-                  <SummaryRow label="性別" value={gender} />
-                  <SummaryRow label="參加份數" value={`${participationCount} 份`} />
-                  <SummaryRow label="農曆出生年月日" value={lunarBirth} />
-                  <SummaryRow label="時辰" value={timeOfBirth} />
-                  <SummaryRow label="國家" value={country} />
-                  <SummaryRow label="居住地址" value={residenceAddress} />
-                  {address2 && <SummaryRow label="地址2" value={address2} />}
                   <SummaryRow
-                    label="公司行號"
-                    value={
-                      hasCompany === "是"
-                        ? `${companyName}（${companyAddress}）`
-                        : "無"
-                    }
+                    label="普渡類型"
+                    value={companyMode ? "公司行號" : "個人"}
                   />
+                  <SummaryRow
+                    label={companyMode ? "公司名稱" : "姓名"}
+                    value={name}
+                  />
+                  {!companyMode && <SummaryRow label="性別" value={gender} />}
+                  <SummaryRow label="參加份數" value={`${participationCount} 份`} />
+                  {!companyMode && (
+                    <>
+                      <SummaryRow label="農曆出生年月日" value={lunarBirth} />
+                      <SummaryRow label="時辰" value={timeOfBirth} />
+                    </>
+                  )}
+                  <SummaryRow label="國家" value={country} />
+                  <SummaryRow
+                    label={companyMode ? "公司地址" : "居住地址"}
+                    value={residenceAddress}
+                  />
+                  {address2 && <SummaryRow label="地址2" value={address2} />}
+                  {!companyMode && (
+                    <SummaryRow
+                      label="公司行號"
+                      value={
+                        hasCompany === "是"
+                          ? `${companyName}（${companyAddress}）`
+                          : "無"
+                      }
+                    />
+                  )}
                 </div>
               </div>
 
