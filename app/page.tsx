@@ -44,8 +44,14 @@ const PRICE_FAMILY = 1000; // 全戶消災每份
 const PRICE_PERSONAL = 500; // 個人消災每份
 
 // 單筆牌位金額：全家/個人消災依範圍計價（未選擇則不計），其餘固定 500
-function tabletRowPrice(tabletKey: string, entry: TabletEntry): number {
+// 公司行號普渡的公司祿位無全家/個人之分，固定 500
+function tabletRowPrice(
+  tabletKey: string,
+  entry: TabletEntry,
+  companyMode: boolean
+): number {
   if (tabletKey === "quanjia") {
+    if (companyMode) return PRICE_PER_TABLET;
     if (entry.scope === "全家") return PRICE_FAMILY;
     if (entry.scope === "個人") return PRICE_PERSONAL;
     return 0; // 尚未選擇全家/個人，不列入計算
@@ -67,6 +73,9 @@ interface TabletFieldConfig {
   allowBlankName?: boolean; // 允許留白（僅檢查無效字詞）
   hint?: React.ReactNode;
   placeholder?: string;
+  hideInCompany?: boolean; // 公司行號普渡時不顯示此欄位
+  companyLabel?: string; // 公司行號普渡時改用的標籤
+  companyPlaceholder?: string; // 公司行號普渡時改用的提示字
   // 依同一筆其他欄位動態調整標籤／提示／唯讀（例如超薦祖先依類別切換）
   dynamic?: (entry: TabletEntry) => {
     label?: string;
@@ -81,12 +90,15 @@ interface TabletConfig {
   title: string;
   subtableKey: string;
   fields: TabletFieldConfig[];
+  hideInCompany?: boolean; // 公司行號普渡時不提供此牌位
+  companyTitle?: string; // 公司行號普渡時改用的名稱
 }
 
 const TABLET_CONFIGS: TabletConfig[] = [
   {
     key: "quanjia",
     title: "全家/個人消災長生祿位",
+    companyTitle: "公司祿位",
     subtableKey: "1003673",
     fields: [
       {
@@ -95,6 +107,7 @@ const TABLET_CONFIGS: TabletConfig[] = [
         label: "全家/個人",
         required: true,
         options: ["全家", "個人"],
+        hideInCompany: true,
       },
       {
         key: "targetName",
@@ -103,6 +116,8 @@ const TABLET_CONFIGS: TabletConfig[] = [
         required: true,
         sameAsMainName: true,
         placeholder: "請輸入姓名",
+        companyLabel: "公司祿位（公司名稱）",
+        companyPlaceholder: "請輸入公司名稱",
       },
       {
         key: "address",
@@ -111,12 +126,15 @@ const TABLET_CONFIGS: TabletConfig[] = [
         required: true,
         isAddress: true,
         placeholder: "請輸入地址",
+        companyLabel: "公司地址",
+        companyPlaceholder: "請輸入公司地址",
       },
     ],
   },
   {
     key: "ancestor",
     title: "超薦祖先牌位",
+    hideInCompany: true,
     subtableKey: "1003674",
     fields: [
       {
@@ -166,6 +184,7 @@ const TABLET_CONFIGS: TabletConfig[] = [
   {
     key: "karmic",
     title: "冤親債主牌位",
+    hideInCompany: true,
     subtableKey: "1003675",
     fields: [
       {
@@ -212,6 +231,7 @@ const TABLET_CONFIGS: TabletConfig[] = [
   {
     key: "unborn",
     title: "超薦無緣子女（嬰靈）牌位",
+    hideInCompany: true,
     subtableKey: "1003676",
     fields: [
       {
@@ -244,6 +264,7 @@ const TABLET_CONFIGS: TabletConfig[] = [
   {
     key: "friends",
     title: "超渡親朋好友牌位",
+    hideInCompany: true,
     subtableKey: "1003677",
     fields: [
       {
@@ -274,6 +295,7 @@ const TABLET_CONFIGS: TabletConfig[] = [
   {
     key: "pets",
     title: "超薦寵物牌位",
+    hideInCompany: true,
     subtableKey: "1003678",
     fields: [
       {
@@ -637,16 +659,38 @@ export default function FormPage() {
       ? `${minguoYearToChinese(minguoYear)}年${lunarMonth}月${lunarDay}日`
       : "";
 
+  // ── 公司行號普渡下的牌位／欄位／名稱切換 ──────────────────
+  const visibleTabletConfigs = companyMode
+    ? TABLET_CONFIGS.filter((c) => !c.hideInCompany)
+    : TABLET_CONFIGS;
+
+  function tabletTitle(cfg: TabletConfig): string {
+    return companyMode && cfg.companyTitle ? cfg.companyTitle : cfg.title;
+  }
+
+  function tabletFields(cfg: TabletConfig): TabletFieldConfig[] {
+    return companyMode
+      ? cfg.fields.filter((f) => !f.hideInCompany)
+      : cfg.fields;
+  }
+
+  function fieldBaseLabel(f: TabletFieldConfig): string {
+    return companyMode && f.companyLabel ? f.companyLabel : f.label;
+  }
+
   const shares = parseInt(participationCount) || 0;
-  const totalTabletRows = TABLET_CONFIGS.reduce((sum, c) => {
+  const totalTabletRows = visibleTabletConfigs.reduce((sum, c) => {
     const t = tablets[c.key];
     return sum + (t.wants === "是" ? t.entries.length : 0);
   }, 0);
   const shareAmount = shares * PRICE_PER_SHARE;
-  const tabletAmount = TABLET_CONFIGS.reduce((sum, c) => {
+  const tabletAmount = visibleTabletConfigs.reduce((sum, c) => {
     const t = tablets[c.key];
     if (t.wants !== "是") return sum;
-    return sum + t.entries.reduce((s, e) => s + tabletRowPrice(c.key, e), 0);
+    return (
+      sum +
+      t.entries.reduce((s, e) => s + tabletRowPrice(c.key, e, companyMode), 0)
+    );
   }, 0);
   const totalAmount = shareAmount + tabletAmount;
 
@@ -706,13 +750,15 @@ export default function FormPage() {
       }
     }
 
-    TABLET_CONFIGS.forEach((cfg) => {
+    visibleTabletConfigs.forEach((cfg) => {
       const t = tablets[cfg.key];
       if (t.wants !== "是") return;
-      if (!t.count) errs.push(`請選擇${cfg.title}數量`);
+      const title = tabletTitle(cfg);
+      if (!t.count) errs.push(`請選擇${title}數量`);
       t.entries.forEach((entry, i) => {
-        cfg.fields.forEach((f) => {
+        tabletFields(cfg).forEach((f) => {
           const val = entry[f.key].trim();
+          const label = fieldBaseLabel(f);
           if (f.allowBlankName) {
             if (
               val &&
@@ -720,11 +766,11 @@ export default function FormPage() {
                 (inv) => inv.toLowerCase() === val.toLowerCase()
               )
             ) {
-              errs.push(`${cfg.title}第 ${i + 1} 筆：${f.label}不可填寫「${val}」`);
+              errs.push(`${title}第 ${i + 1} 筆：${label}不可填寫「${val}」`);
             }
           } else if (f.required && !val) {
             const verb = f.options ? "請選擇" : "請輸入";
-            errs.push(`${cfg.title}第 ${i + 1} 筆：${verb}${f.label}`);
+            errs.push(`${title}第 ${i + 1} 筆：${verb}${label}`);
           } else if (
             f.key !== "address" &&
             val &&
@@ -732,7 +778,7 @@ export default function FormPage() {
               (inv) => inv.toLowerCase() === val.toLowerCase()
             )
           ) {
-            errs.push(`${cfg.title}第 ${i + 1} 筆：${f.label}不可填寫「${val}」`);
+            errs.push(`${title}第 ${i + 1} 筆：${label}不可填寫「${val}」`);
           }
         });
       });
@@ -766,11 +812,15 @@ export default function FormPage() {
     const tabletPayload: Record<string, TabletEntry[]> = {};
     TABLET_CONFIGS.forEach((cfg) => {
       const t = tablets[cfg.key];
-      if (t.wants !== "是") {
+      // 公司模式下不提供的牌位一律不送出
+      if (t.wants !== "是" || (companyMode && cfg.hideInCompany)) {
         tabletPayload[cfg.key] = [];
         return;
       }
-      if (cfg.key === "ancestor") {
+      if (companyMode && cfg.key === "quanjia") {
+        // 公司祿位無全家/個人之分，清空該欄避免送出殘留值
+        tabletPayload[cfg.key] = t.entries.map((e) => ({ ...e, scope: "" }));
+      } else if (cfg.key === "ancestor") {
         // 超薦祖先：把「單位祖先／歷代祖先」類別前置到姓名值一起送出
         tabletPayload[cfg.key] = t.entries.map((e) => ({
           ...e,
@@ -1129,16 +1179,18 @@ export default function FormPage() {
           )}
 
           {/* ===== 各項牌位 ===== */}
-          {TABLET_CONFIGS.map((cfg) => {
+          {visibleTabletConfigs.map((cfg) => {
             const t = tablets[cfg.key];
+            const title = tabletTitle(cfg);
+            const fields = tabletFields(cfg);
             // 取本牌位唯一的說明文字，供無說明的欄位保留等高空間以對齊輸入框
-            const hintPlaceholder = cfg.fields.find((f) => f.hint)?.hint;
+            const hintPlaceholder = fields.find((f) => f.hint)?.hint;
             return (
               <div key={cfg.key} className="bg-white rounded-2xl shadow-md p-6 mb-6 border-t-4 border-amber-400">
-                <SectionTitle title={cfg.title} />
+                <SectionTitle title={title} />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <SelectField
-                    label={`是否要參加${cfg.title}？`}
+                    label={`是否要參加${title}？`}
                     value={t.wants}
                     onChange={(v) => setTabletWants(cfg.key, v)}
                     options={YES_NO}
@@ -1167,19 +1219,22 @@ export default function FormPage() {
                         </p>
                         <div
                           className={`grid grid-cols-1 gap-4 ${
-                            cfg.fields.length === 4
+                            fields.length === 4
                               ? "md:grid-cols-2"
-                              : cfg.fields.length >= 3
+                              : fields.length >= 3
                               ? "md:grid-cols-3"
                               : "md:grid-cols-2"
                           }`}
                         >
-                          {cfg.fields.map((f) => {
+                          {fields.map((f) => {
                             const dyn = f.dynamic ? f.dynamic(entry) : null;
-                            const fieldLabel = dyn?.label ?? f.label;
+                            const fieldLabel = dyn?.label ?? fieldBaseLabel(f);
                             const fieldHint = dyn?.hint ?? f.hint;
                             const fieldPlaceholder =
-                              dyn?.placeholder ?? f.placeholder;
+                              dyn?.placeholder ??
+                              (companyMode && f.companyPlaceholder
+                                ? f.companyPlaceholder
+                                : f.placeholder);
                             const fieldReadOnly = dyn?.readOnly ?? false;
                             return (
                             <div key={f.fieldId}>
@@ -1320,17 +1375,17 @@ export default function FormPage() {
                   {totalTabletRows > 0 && (
                     <p>加購牌位：NT$ {tabletAmount.toLocaleString()}</p>
                   )}
-                  {TABLET_CONFIGS.map((cfg) => {
+                  {visibleTabletConfigs.map((cfg) => {
                     const t = tablets[cfg.key];
                     if (t.wants !== "是" || t.entries.length === 0) return null;
                     const n = t.entries.length;
                     const amount = t.entries.reduce(
-                      (s, e) => s + tabletRowPrice(cfg.key, e),
+                      (s, e) => s + tabletRowPrice(cfg.key, e, companyMode),
                       0
                     );
                     return (
                       <p key={cfg.key} className="text-xs text-gray-500 ml-2">
-                        └ {cfg.title} ×{n}：NT$ {amount.toLocaleString()}
+                        └ {tabletTitle(cfg)} ×{n}：NT$ {amount.toLocaleString()}
                       </p>
                     );
                   })}
@@ -1478,13 +1533,13 @@ export default function FormPage() {
               </div>
 
               {/* 各牌位 */}
-              {TABLET_CONFIGS.map((cfg) => {
+              {visibleTabletConfigs.map((cfg) => {
                 const t = tablets[cfg.key];
                 if (t.wants !== "是" || t.entries.length === 0) return null;
                 return (
                   <div key={cfg.key}>
                     <p className="font-bold text-red-800 text-sm mb-2 border-b border-red-100 pb-1">
-                      {cfg.title}（{t.entries.length} 筆）
+                      {tabletTitle(cfg)}（{t.entries.length} 筆）
                     </p>
                     <div className="space-y-2">
                       {t.entries.map((entry, i) => (
@@ -1496,10 +1551,10 @@ export default function FormPage() {
                             第 {i + 1} 筆
                           </p>
                           <div className="space-y-1">
-                            {cfg.fields.map((f) => (
+                            {tabletFields(cfg).map((f) => (
                               <SummaryRow
                                 key={f.fieldId}
-                                label={f.label}
+                                label={fieldBaseLabel(f)}
                                 value={entry[f.key]}
                                 small
                               />
