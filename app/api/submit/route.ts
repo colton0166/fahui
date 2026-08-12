@@ -113,20 +113,50 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Ragic 有時回傳 HTTP 200 但 body 含 ERROR
+    // Ragic 有時回傳 HTTP 200 但 body 含 ERROR，或直接回一頁 HTML（認證失敗時的登入頁）
+    let parsed: any;
     try {
-      const parsed = JSON.parse(result);
-      if (parsed.status === "ERROR") {
-        return NextResponse.json(
-          { error: `Ragic 錯誤 (${parsed.code}): ${parsed.msg}`, detail: result },
-          { status: 400 }
-        );
-      }
+      parsed = JSON.parse(result);
     } catch {
-      // result 不是 JSON 就跳過
+      // 不是 JSON 代表沒有真的寫入，不可當成成功
+      console.error(
+        "[Ragic Submit] 非 JSON 回應，HTTP",
+        response.status,
+        "前 200 字：",
+        result.slice(0, 200)
+      );
+      return NextResponse.json(
+        {
+          error: "Ragic 未回傳預期的 JSON，資料可能未寫入（常見原因：API Key 無效或未帶到）",
+          detail: result.slice(0, 300),
+        },
+        { status: 502 }
+      );
     }
 
-    return NextResponse.json({ success: true, data: result });
+    if (parsed.status === "ERROR") {
+      console.error("[Ragic Submit] Ragic 回報錯誤", parsed.code, parsed.msg);
+      return NextResponse.json(
+        { error: `Ragic 錯誤 (${parsed.code}): ${parsed.msg}`, detail: result },
+        { status: 400 }
+      );
+    }
+
+    if (parsed.status !== "SUCCESS") {
+      console.error("[Ragic Submit] 非預期的 status：", parsed.status);
+      return NextResponse.json(
+        {
+          error: `Ragic 回傳非預期狀態：${parsed.status ?? "（無 status 欄位）"}`,
+          detail: result.slice(0, 300),
+        },
+        { status: 502 }
+      );
+    }
+
+    // 只記錄狀態與資料編號，不記錄報名者個資
+    console.log("[Ragic Submit] SUCCESS ragicId:", parsed.ragicId ?? "(無)");
+
+    return NextResponse.json({ success: true, ragicId: parsed.ragicId });
   } catch (err: any) {
     console.error("[Ragic Submit] error:", err);
     return NextResponse.json(
