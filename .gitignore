@@ -9,6 +9,9 @@ yarn-error.log*
 out/
 dist/
 
+# TypeScript 增量建置快取（與 Nixpacks 的 cache mount 路徑衝突，不可進版控）
+tsconfig.tsbuildinfo
+
 # Environment variables
 .env
 .env.local
