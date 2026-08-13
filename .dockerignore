@@ -1,0 +1,29 @@
+# 相依套件與建置產物：由 Dockerfile 內部重新產生
+node_modules
+.next
+out
+dist
+tsconfig.tsbuildinfo
+
+# 版本控制與專案文件
+.git
+.gitignore
+.windsurf
+README.md
+fahui-rules.md
+picture
+
+# 機密：正式金鑰由 Coolify 的環境變數注入，絕不進入 image
+.env
+.env.*
+
+# Docker 自身檔案
+Dockerfile*
+.dockerignore
+
+# 日誌與雜項
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.lnk

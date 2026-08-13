@@ -6,6 +6,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   return NextResponse.json({
+    status: "ok",
     ok: true,
     time: new Date().toISOString(),
     ragicKeyConfigured: Boolean(process.env.RAGIC_API_KEY),
