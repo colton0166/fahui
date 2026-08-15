@@ -3,6 +3,13 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { cities, districts } from "@/lib/locationData";
+import {
+  TABLET_CONFIGS,
+  parseTabletLimits,
+  type TabletConfig,
+  type TabletEntry,
+  type TabletFieldConfig,
+} from "@/lib/tablets";
 
 interface LunarData {
   lunar_year: string;
@@ -57,281 +64,6 @@ function tabletRowPrice(
     return 0; // 尚未選擇全家/個人，不列入計算
   }
   return PRICE_PER_TABLET;
-}
-
-// ── 牌位子表格設定 ──────────────────────────────────────────
-type EntryKey = "scope" | "yangName" | "targetName" | "address";
-
-interface TabletFieldConfig {
-  key: EntryKey;
-  fieldId: string;
-  label: string;
-  required: boolean;
-  options?: string[]; // 有值時渲染為單選下拉，否則為文字輸入
-  isAddress?: boolean; // 顯示「與居住地址相同」勾選框
-  sameAsMainName?: boolean; // 顯示「與基本資料姓名相同」勾選框
-  allowBlankName?: boolean; // 允許留白（僅檢查無效字詞）
-  hint?: React.ReactNode;
-  placeholder?: string;
-  hideInCompany?: boolean; // 公司行號普渡時不顯示此欄位
-  companyLabel?: string; // 公司行號普渡時改用的標籤
-  companyPlaceholder?: string; // 公司行號普渡時改用的提示字
-  // 依同一筆其他欄位動態調整標籤／提示／唯讀（例如超薦祖先依類別切換）
-  dynamic?: (entry: TabletEntry) => {
-    label?: string;
-    placeholder?: string;
-    hint?: React.ReactNode;
-    readOnly?: boolean;
-  };
-}
-
-interface TabletConfig {
-  key: string;
-  title: string;
-  subtableKey: string;
-  fields: TabletFieldConfig[];
-  hideInCompany?: boolean; // 公司行號普渡時不提供此牌位
-  companyTitle?: string; // 公司行號普渡時改用的名稱
-}
-
-const TABLET_CONFIGS: TabletConfig[] = [
-  {
-    key: "quanjia",
-    title: "全家/個人消災長生祿位",
-    companyTitle: "公司祿位",
-    subtableKey: "1003673",
-    fields: [
-      {
-        key: "scope",
-        fieldId: "1003682",
-        label: "全家/個人",
-        required: true,
-        options: ["全家", "個人"],
-        hideInCompany: true,
-      },
-      {
-        key: "targetName",
-        fieldId: "1003657",
-        label: "全家消災長生祿位（姓名）",
-        required: true,
-        sameAsMainName: true,
-        placeholder: "請輸入姓名",
-        companyLabel: "公司祿位（公司名稱）",
-        companyPlaceholder: "請輸入公司名稱",
-      },
-      {
-        key: "address",
-        fieldId: "1003658",
-        label: "地址",
-        required: true,
-        isAddress: true,
-        placeholder: "請輸入地址",
-        companyLabel: "公司地址",
-        companyPlaceholder: "請輸入公司地址",
-      },
-    ],
-  },
-  {
-    key: "ancestor",
-    title: "超薦祖先牌位",
-    hideInCompany: true,
-    subtableKey: "1003674",
-    fields: [
-      {
-        key: "scope",
-        fieldId: "ancestor_category",
-        label: "祖先類別",
-        required: true,
-        options: ["單位祖先", "歷代祖先"],
-      },
-      {
-        key: "yangName",
-        fieldId: "1003659",
-        label: "陽上超薦人",
-        required: true,
-        sameAsMainName: true,
-        placeholder: "請輸入陽上超薦人姓名",
-      },
-      {
-        key: "targetName",
-        fieldId: "1003660",
-        label: "超薦祖先姓氏或姓名",
-        required: true,
-        placeholder: "請先選擇上方祖先類別",
-        dynamic: (e) =>
-          e.scope === "歷代祖先"
-            ? {
-                label: "祖先姓氏",
-                placeholder: "請輸入姓氏（例：黃）",
-              }
-            : e.scope === "單位祖先"
-            ? {
-                label: "祖先完整姓名",
-                placeholder: "請輸入完整姓名（例：黃大明）",
-              }
-            : { placeholder: "請先選擇上方祖先類別", readOnly: true },
-      },
-      {
-        key: "address",
-        fieldId: "1003661",
-        label: "地址",
-        required: true,
-        isAddress: true,
-        placeholder: "請輸入牌位地址",
-      },
-    ],
-  },
-  {
-    key: "karmic",
-    title: "冤親債主牌位",
-    hideInCompany: true,
-    subtableKey: "1003675",
-    fields: [
-      {
-        key: "yangName",
-        fieldId: "1003662",
-        label: "陽上姓名",
-        required: true,
-        sameAsMainName: true,
-        placeholder: "請輸入陽上姓名",
-      },
-      {
-        key: "address",
-        fieldId: "1003663",
-        label: "地址",
-        required: true,
-        isAddress: true,
-        placeholder: "請輸入居住地址",
-      },
-    ],
-  },
-  {
-    key: "diji",
-    title: "超薦地基主牌位",
-    subtableKey: "1003712",
-    fields: [
-      {
-        key: "yangName",
-        fieldId: "1003710",
-        label: "超薦人",
-        required: true,
-        sameAsMainName: true,
-        placeholder: "請輸入超薦人姓名",
-      },
-      {
-        key: "address",
-        fieldId: "1003711",
-        label: "地基主地址",
-        required: true,
-        isAddress: true,
-        placeholder: "請輸入地基主地址",
-      },
-    ],
-  },
-  {
-    key: "unborn",
-    title: "超薦無緣子女（嬰靈）牌位",
-    hideInCompany: true,
-    subtableKey: "1003676",
-    fields: [
-      {
-        key: "yangName",
-        fieldId: "1003664",
-        label: "陽上超薦人姓名",
-        required: true,
-        sameAsMainName: true,
-        placeholder: "請輸入陽上超薦人姓名",
-      },
-      {
-        key: "targetName",
-        fieldId: "1003665",
-        label: "無緣子女姓名",
-        required: false,
-        allowBlankName: true,
-        placeholder: "請輸入無緣子女姓名（可留白）",
-        hint: "不可填寫「沒有」等無效內容",
-      },
-      {
-        key: "address",
-        fieldId: "1003666",
-        label: "地址",
-        required: true,
-        isAddress: true,
-        placeholder: "請輸入地址",
-      },
-    ],
-  },
-  {
-    key: "friends",
-    title: "超渡親朋好友牌位",
-    hideInCompany: true,
-    subtableKey: "1003677",
-    fields: [
-      {
-        key: "yangName",
-        fieldId: "1003667",
-        label: "陽上超薦人姓名",
-        required: true,
-        sameAsMainName: true,
-        placeholder: "請輸入陽上超薦人姓名",
-      },
-      {
-        key: "targetName",
-        fieldId: "1003668",
-        label: "超渡親朋好友姓名",
-        required: true,
-        placeholder: "請輸入親朋好友姓名",
-      },
-      {
-        key: "address",
-        fieldId: "1003669",
-        label: "地址",
-        required: true,
-        isAddress: true,
-        placeholder: "請輸入地址",
-      },
-    ],
-  },
-  {
-    key: "pets",
-    title: "超薦寵物牌位",
-    hideInCompany: true,
-    subtableKey: "1003678",
-    fields: [
-      {
-        key: "yangName",
-        fieldId: "1003670",
-        label: "陽上超薦人姓名",
-        required: true,
-        sameAsMainName: true,
-        placeholder: "請輸入陽上超薦人姓名",
-      },
-      {
-        key: "targetName",
-        fieldId: "1003671",
-        label: "超薦寵物及姓名",
-        required: true,
-        placeholder: "請輸入寵物種類及姓名",
-      },
-      {
-        key: "address",
-        fieldId: "1003672",
-        label: "地址",
-        required: true,
-        isAddress: true,
-        placeholder: "請輸入地址",
-      },
-    ],
-  },
-];
-
-interface TabletEntry {
-  scope: string;
-  yangName: string;
-  targetName: string;
-  address: string;
-  sameAsResidence: boolean;
-  sameAsMainName: boolean;
 }
 
 interface TabletState {
@@ -526,6 +258,11 @@ export default function FormPage() {
   const [companyName, setCompanyName] = useState("");
   const [companyAddress, setCompanyAddress] = useState("");
 
+  // null = 網址未指定限制（原本模式）；物件 = 指定登記模式
+  const [tabletLimits, setTabletLimits] = useState<Record<string, number> | null>(
+    null
+  );
+
   const [tablets, setTablets] = useState<Record<string, TabletState>>(() =>
     Object.fromEntries(
       TABLET_CONFIGS.map((c) => [c.key, { wants: "", count: "", entries: [] }])
@@ -623,6 +360,38 @@ export default function FormPage() {
     }
   }, [hasCompany]);
 
+  // 掛載後讀取網址參數。刻意不用 useSearchParams，避免整頁被迫加 Suspense 邊界。
+  useEffect(() => {
+    setTabletLimits(parseTabletLimits(window.location.search));
+  }, []);
+
+  // 套用限制：上限 0 的牌位鎖成「否」，已填超過上限的裁切到上限
+  useEffect(() => {
+    if (!tabletLimits) return;
+    setTablets((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      TABLET_CONFIGS.forEach((cfg) => {
+        const limit = tabletLimits[cfg.key] ?? 0;
+        const t = prev[cfg.key];
+        if (limit === 0) {
+          if (t.wants !== "否" || t.entries.length > 0) {
+            next[cfg.key] = { wants: "否", count: "", entries: [] };
+            changed = true;
+          }
+        } else if (t.entries.length > limit) {
+          next[cfg.key] = {
+            ...t,
+            count: String(limit),
+            entries: t.entries.slice(0, limit),
+          };
+          changed = true;
+        }
+      });
+      return changed ? next : prev;
+    });
+  }, [tabletLimits]);
+
   // 切換為公司行號普渡時，清掉個人專屬欄位（性別、出生資料、公司資料區）
   useEffect(() => {
     if (isCompany !== "是") return;
@@ -676,6 +445,28 @@ export default function FormPage() {
 
   function fieldBaseLabel(f: TabletFieldConfig): string {
     return companyMode && f.companyLabel ? f.companyLabel : f.label;
+  }
+
+  // 本牌位可填上限；null 代表本次不限制（網址未帶參數）
+  function limitFor(key: string): number | null {
+    if (!tabletLimits) return null;
+    return tabletLimits[key] ?? 0; // 網址未列出的牌位視為 0
+  }
+
+  function countOptionsFor(key: string): string[] {
+    const limit = limitFor(key);
+    if (limit === null) return COUNT_OPTIONS;
+    return COUNT_OPTIONS.filter((n) => Number(n) <= limit);
+  }
+
+  // 超過本次登記數量的牌位（送出前的最後把關）
+  function tabletsOverLimit(): TabletConfig[] {
+    return TABLET_CONFIGS.filter((cfg) => {
+      const limit = limitFor(cfg.key);
+      if (limit === null) return false;
+      const t = tablets[cfg.key];
+      return t.wants === "是" && t.entries.length > limit;
+    });
   }
 
   const shares = parseInt(participationCount) || 0;
@@ -752,8 +543,15 @@ export default function FormPage() {
 
     visibleTabletConfigs.forEach((cfg) => {
       const t = tablets[cfg.key];
-      if (t.wants !== "是") return;
+      const limit = limitFor(cfg.key);
       const title = tabletTitle(cfg);
+      // 逐一種類檢查是否超出本次登記數量
+      if (limit !== null && t.wants === "是" && t.entries.length > limit) {
+        errs.push(
+          `${title}：您填寫的牌位數量超過本次登記數量（本次可填 ${limit} 位，目前 ${t.entries.length} 位），請確認後再送出。`
+        );
+      }
+      if (t.wants !== "是") return;
       if (!t.count) errs.push(`請選擇${title}數量`);
       t.entries.forEach((entry, i) => {
         tabletFields(cfg).forEach((f) => {
@@ -807,6 +605,19 @@ export default function FormPage() {
   // 確認視窗按「確認送出」：真正送出資料
   async function handleConfirmSubmit() {
     setSubmitResult(null);
+
+    // 送出前最後把關：任一種類超出本次登記數量就不送 Ragic
+    const over = tabletsOverLimit();
+    if (over.length > 0) {
+      setShowConfirm(false);
+      setSubmitResult({
+        success: false,
+        message: `您填寫的牌位數量超過本次登記數量，請確認後再送出。（${over
+          .map((cfg) => `${tabletTitle(cfg)} 可填 ${limitFor(cfg.key)} 位`)
+          .join("、")}）`,
+      });
+      return;
+    }
 
     // 組合各牌位子表格資料
     const tabletPayload: Record<string, TabletEntry[]> = {};
@@ -1185,9 +996,27 @@ export default function FormPage() {
             const fields = tabletFields(cfg);
             // 取本牌位唯一的說明文字，供無說明的欄位保留等高空間以對齊輸入框
             const hintPlaceholder = fields.find((f) => f.hint)?.hint;
+            const limit = limitFor(cfg.key);
+            const locked = limit === 0; // 本次未登記此牌位
+            const filled = t.wants === "是" ? t.entries.length : 0;
+            const reachedLimit = limit !== null && limit > 0 && filled >= limit;
             return (
               <div key={cfg.key} className="bg-white rounded-2xl shadow-md p-6 mb-6 border-t-4 border-amber-400">
                 <SectionTitle title={title} />
+
+                {limit !== null && (
+                  <div className="mb-4 flex flex-wrap items-center gap-2">
+                    <span className="inline-flex items-center rounded-full bg-red-50 border border-red-200 px-3 py-1 text-sm font-semibold text-red-800">
+                      已填寫 {filled} / {limit}
+                    </span>
+                    {locked && (
+                      <span className="text-sm text-gray-500">
+                        本次未登記此牌位
+                      </span>
+                    )}
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <SelectField
                     label={`是否要參加${title}？`}
@@ -1195,17 +1024,24 @@ export default function FormPage() {
                     onChange={(v) => setTabletWants(cfg.key, v)}
                     options={YES_NO}
                     required
+                    disabled={locked}
                   />
                   {t.wants === "是" && (
                     <SelectField
                       label="請選擇數量"
                       value={t.count}
                       onChange={(v) => setTabletCount(cfg.key, v)}
-                      options={COUNT_OPTIONS}
+                      options={countOptionsFor(cfg.key)}
                       required
                     />
                   )}
                 </div>
+
+                {reachedLimit && (
+                  <p className="mt-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                    本次{title}可填寫 {limit} 位，已達本次登記上限。
+                  </p>
+                )}
 
                 {t.wants === "是" && t.entries.length > 0 && (
                   <div className="mt-6 space-y-4">
