@@ -262,6 +262,10 @@ export default function FormPage() {
   const [tabletLimits, setTabletLimits] = useState<Record<string, number> | null>(
     null
   );
+  // 簽章連結（?k=）的驗證狀態；none = 未使用簽章連結
+  const [linkStatus, setLinkStatus] = useState<
+    "none" | "checking" | "ok" | "invalid"
+  >("none");
 
   const [tablets, setTablets] = useState<Record<string, TabletState>>(() =>
     Object.fromEntries(
@@ -361,8 +365,26 @@ export default function FormPage() {
   }, [hasCompany]);
 
   // 掛載後讀取網址參數。刻意不用 useSearchParams，避免整頁被迫加 Suspense 邊界。
+  // 帶 ?k= 的簽章連結需交由伺服器驗證；改過的連結一律拒絕。
   useEffect(() => {
-    setTabletLimits(parseTabletLimits(window.location.search));
+    const token = new URLSearchParams(window.location.search).get("k");
+    if (!token) {
+      setTabletLimits(parseTabletLimits(window.location.search));
+      return;
+    }
+
+    setLinkStatus("checking");
+    fetch(`/api/link?k=${encodeURIComponent(token)}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.ok && data.limits) {
+          setTabletLimits(data.limits);
+          setLinkStatus("ok");
+        } else {
+          setLinkStatus("invalid");
+        }
+      })
+      .catch(() => setLinkStatus("invalid"));
   }, []);
 
   // 套用限制：上限 0 的牌位鎖成「否」，已填超過上限的裁切到上限
@@ -681,6 +703,48 @@ export default function FormPage() {
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  // 簽章連結驗證中／驗證失敗時，不顯示表單
+  if (linkStatus === "checking") {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="flex items-center gap-3 text-red-800">
+          <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none">
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            />
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+            />
+          </svg>
+          <span className="font-semibold">正在確認報名連結...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (linkStatus === "invalid") {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="bg-white rounded-2xl shadow-md p-8 max-w-md w-full border-t-4 border-amber-400 text-center">
+          <p className="text-5xl mb-4">🔒</p>
+          <h1 className="text-xl font-bold text-red-800 mb-3">連結無效</h1>
+          <p className="text-sm text-gray-600 leading-relaxed">
+            此報名連結無法使用，可能已被修改或複製不完整。
+            <br />
+            請向工作人員重新索取您的專屬報名連結。
+          </p>
+        </div>
+      </div>
+    );
   }
 
   return (

@@ -57,27 +57,58 @@ export default function StaffLinkBuilderPage() {
   );
   const [baseUrl, setBaseUrl] = useState("");
   const [copied, setCopied] = useState(false);
+  const [password, setPassword] = useState("");
+  const [token, setToken] = useState("");
+  const [generating, setGenerating] = useState(false);
+  const [error, setError] = useState("");
+  const [config, setConfig] = useState<{
+    signingConfigured: boolean;
+    passwordRequired: boolean;
+  } | null>(null);
 
   // 預設用目前網站網址，工作人員仍可自行改成正式網域
   useEffect(() => {
     setBaseUrl(window.location.origin);
+    fetch("/api/link")
+      .then((res) => res.json())
+      .then(setConfig)
+      .catch(() => setConfig(null));
   }, []);
 
   const selected = TABLET_CONFIGS.filter((cfg) => counts[cfg.key] > 0);
   const hasAny = selected.length > 0;
 
-  const query = useMemo(
-    () =>
-      selected.map((cfg) => `${cfg.limitParam}=${counts[cfg.key]}`).join("&"),
-    [selected, counts]
-  );
+  const link = token ? `${baseUrl}/?k=${token}` : "";
 
-  const link = hasAny ? `${baseUrl}/?${query}` : "";
-
-  // 網址一變更就把「已複製」提示收回，避免誤以為複製到新網址
+  // 數量一改就讓舊連結失效，避免複製到與畫面不符的連結
+  const countsKey = useMemo(() => JSON.stringify(counts), [counts]);
   useEffect(() => {
+    setToken("");
     setCopied(false);
-  }, [link]);
+    setError("");
+  }, [countsKey]);
+
+  async function generate() {
+    setGenerating(true);
+    setError("");
+    try {
+      const res = await fetch("/api/link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ counts, password }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.token) {
+        setError(data.error || "產生連結失敗，請稍後再試");
+        return;
+      }
+      setToken(data.token);
+    } catch {
+      setError("網路錯誤，請稍後再試");
+    } finally {
+      setGenerating(false);
+    }
+  }
 
   async function copyLink() {
     try {
@@ -92,6 +123,7 @@ export default function StaffLinkBuilderPage() {
 
   function reset() {
     setCounts(Object.fromEntries(TABLET_CONFIGS.map((c) => [c.key, 0])));
+    setPassword("");
   }
 
   return (
@@ -169,40 +201,88 @@ export default function StaffLinkBuilderPage() {
             className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm shadow-sm focus:border-red-500 focus:ring-2 focus:ring-red-200 focus:outline-none transition mb-4"
           />
 
-          {hasAny ? (
+          {config?.passwordRequired && (
             <>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">
+                工作人員密碼
+              </label>
               <input
-                id="link-output"
-                type="text"
-                readOnly
-                value={link}
-                onFocus={(e) => e.currentTarget.select()}
-                className="w-full rounded-lg border border-red-200 bg-red-50/50 px-3 py-2.5 text-sm text-gray-800 shadow-sm focus:outline-none"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="請輸入工作人員密碼"
+                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm shadow-sm focus:border-red-500 focus:ring-2 focus:ring-red-200 focus:outline-none transition mb-4"
               />
-              <div className="flex flex-wrap gap-3 mt-3">
-                <button
-                  type="button"
-                  onClick={copyLink}
-                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-red-700 to-red-800 hover:from-red-800 hover:to-red-900 text-amber-200 font-bold py-2.5 px-6 ring-1 ring-amber-400/60 transition"
-                >
-                  {copied ? "已複製 ✓" : "複製連結"}
-                </button>
-                <a
-                  href={link}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-2 rounded-xl border border-gray-300 bg-white text-gray-700 font-semibold py-2.5 px-6 hover:bg-gray-100 transition"
-                >
-                  開啟預覽
-                </a>
-              </div>
             </>
-          ) : (
+          )}
+
+          {config && !config.signingConfigured && (
+            <div className="rounded-xl bg-red-50 border border-red-300 p-4 text-sm text-red-800 leading-relaxed mb-4">
+              伺服器尚未設定 <code>LINK_SIGNING_SECRET</code>，無法產生連結。
+              請在 Coolify 的環境變數新增後重新部署。
+            </div>
+          )}
+
+          {config?.signingConfigured && !config.passwordRequired && (
+            <div className="rounded-xl bg-amber-50 border border-amber-300 p-4 text-sm text-amber-900 leading-relaxed mb-4">
+              尚未設定 <code>STAFF_PASSWORD</code>，任何知道本頁網址的人都能自行產生連結。
+              建議在 Coolify 環境變數加上密碼。
+            </div>
+          )}
+
+          {!hasAny ? (
             <div className="rounded-xl bg-amber-50 border border-amber-300 p-4 text-sm text-amber-900 leading-relaxed">
               目前所有牌位數量都是 0，尚未產生連結。
               <br />
               請至少設定一項牌位數量——若傳出沒有參數的網址，客人會看到不受限制的原始表單。
             </div>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={generate}
+                disabled={generating || config?.signingConfigured === false}
+                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-red-700 to-red-800 hover:from-red-800 hover:to-red-900 text-amber-200 font-bold py-2.5 px-6 ring-1 ring-amber-400/60 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {generating ? "產生中..." : token ? "重新產生連結" : "產生連結"}
+              </button>
+
+              {error && (
+                <p className="mt-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                  {error}
+                </p>
+              )}
+
+              {token && (
+                <>
+                  <input
+                    id="link-output"
+                    type="text"
+                    readOnly
+                    value={link}
+                    onFocus={(e) => e.currentTarget.select()}
+                    className="w-full rounded-lg border border-red-200 bg-red-50/50 px-3 py-2.5 text-sm text-gray-800 shadow-sm focus:outline-none mt-4"
+                  />
+                  <div className="flex flex-wrap gap-3 mt-3">
+                    <button
+                      type="button"
+                      onClick={copyLink}
+                      className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-red-700 to-red-800 hover:from-red-800 hover:to-red-900 text-amber-200 font-bold py-2.5 px-6 ring-1 ring-amber-400/60 transition"
+                    >
+                      {copied ? "已複製 ✓" : "複製連結"}
+                    </button>
+                    <a
+                      href={link}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-2 rounded-xl border border-gray-300 bg-white text-gray-700 font-semibold py-2.5 px-6 hover:bg-gray-100 transition"
+                    >
+                      開啟預覽
+                    </a>
+                  </div>
+                </>
+              )}
+            </>
           )}
         </div>
 
