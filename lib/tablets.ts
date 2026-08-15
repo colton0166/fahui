@@ -34,34 +34,29 @@ export interface TabletConfig {
   subtableKey: string;
   fields: TabletFieldConfig[];
   hideInCompany?: boolean; // 公司行號普渡時不提供此牌位
+  onlyInCompany?: boolean; // 僅公司行號普渡時提供此牌位
   companyTitle?: string; // 公司行號普渡時改用的名稱
+  // 有值時代表 scope（Ragic 1003682 全家/個人）由系統固定填入，客人不需選擇。
+  // 個人／全家／公司祿位三種共用子表格 1003673，送出時會合併為同一組資料。
+  fixedScope?: string;
 }
 
 export const TABLET_CONFIGS: TabletConfig[] = [
   {
-    key: "quanjia",
-    title: "全家/個人消災長生祿位",
-    limitParam: "sheng",
-    companyTitle: "公司祿位",
+    key: "shengPersonal",
+    title: "個人消災長生祿位",
+    limitParam: "personal",
+    fixedScope: "個人",
+    hideInCompany: true,
     subtableKey: "1003673",
     fields: [
       {
-        key: "scope",
-        fieldId: "1003682",
-        label: "全家/個人",
-        required: true,
-        options: ["全家", "個人"],
-        hideInCompany: true,
-      },
-      {
         key: "targetName",
         fieldId: "1003657",
-        label: "全家消災長生祿位（姓名）",
+        label: "個人消災長生祿位（姓名）",
         required: true,
         sameAsMainName: true,
         placeholder: "請輸入姓名",
-        companyLabel: "公司祿位（公司名稱）",
-        companyPlaceholder: "請輸入公司名稱",
       },
       {
         key: "address",
@@ -70,8 +65,58 @@ export const TABLET_CONFIGS: TabletConfig[] = [
         required: true,
         isAddress: true,
         placeholder: "請輸入地址",
-        companyLabel: "公司地址",
-        companyPlaceholder: "請輸入公司地址",
+      },
+    ],
+  },
+  {
+    key: "shengFamily",
+    title: "全家消災長生祿位",
+    limitParam: "family",
+    fixedScope: "全家",
+    hideInCompany: true,
+    subtableKey: "1003673",
+    fields: [
+      {
+        key: "targetName",
+        fieldId: "1003657",
+        label: "全家消災長生祿位（姓名）",
+        required: true,
+        sameAsMainName: true,
+        placeholder: "請輸入姓名",
+      },
+      {
+        key: "address",
+        fieldId: "1003658",
+        label: "地址",
+        required: true,
+        isAddress: true,
+        placeholder: "請輸入地址",
+      },
+    ],
+  },
+  {
+    key: "shengCompany",
+    title: "公司祿位",
+    limitParam: "company",
+    fixedScope: "",
+    onlyInCompany: true,
+    subtableKey: "1003673",
+    fields: [
+      {
+        key: "targetName",
+        fieldId: "1003657",
+        label: "公司祿位（公司名稱）",
+        required: true,
+        sameAsMainName: true,
+        placeholder: "請輸入公司名稱",
+      },
+      {
+        key: "address",
+        fieldId: "1003658",
+        label: "公司地址",
+        required: true,
+        isAddress: true,
+        placeholder: "請輸入公司地址",
       },
     ],
   },

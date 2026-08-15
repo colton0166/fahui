@@ -166,6 +166,11 @@ export default function StaffLinkBuilderPage() {
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-gray-800">
                     {cfg.title}
+                    {cfg.onlyInCompany && (
+                      <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-normal text-amber-800">
+                        限公司行號普渡
+                      </span>
+                    )}
                   </p>
                   <p className="text-xs text-gray-400 mt-0.5">
                     參數 {cfg.limitParam}

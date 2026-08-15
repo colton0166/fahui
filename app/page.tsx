@@ -46,23 +46,12 @@ const TIME_OPTIONS: { value: string; label: string }[] = [
 
 // 金額規則：參加份數 1 份 = 1200，依此類推；每組牌位 +500
 const PRICE_PER_SHARE = 1200;
-const PRICE_PER_TABLET = 500; // 一般加購牌位每份
+const PRICE_PER_TABLET = 500; // 一般加購牌位、個人消災、公司祿位每份
 const PRICE_FAMILY = 1000; // 全戶消災每份
-const PRICE_PERSONAL = 500; // 個人消災每份
 
-// 單筆牌位金額：全家/個人消災依範圍計價（未選擇則不計），其餘固定 500
-// 公司行號普渡的公司祿位無全家/個人之分，固定 500
-function tabletRowPrice(
-  tabletKey: string,
-  entry: TabletEntry,
-  companyMode: boolean
-): number {
-  if (tabletKey === "quanjia") {
-    if (companyMode) return PRICE_PER_TABLET;
-    if (entry.scope === "全家") return PRICE_FAMILY;
-    if (entry.scope === "個人") return PRICE_PERSONAL;
-    return 0; // 尚未選擇全家/個人，不列入計算
-  }
+// 單筆牌位金額：全家消災 1000，其餘（含個人消災、公司祿位、各式牌位）皆 500
+function tabletRowPrice(tabletKey: string): number {
+  if (tabletKey === "shengFamily") return PRICE_FAMILY;
   return PRICE_PER_TABLET;
 }
 
@@ -453,7 +442,7 @@ export default function FormPage() {
   // ── 公司行號普渡下的牌位／欄位／名稱切換 ──────────────────
   const visibleTabletConfigs = companyMode
     ? TABLET_CONFIGS.filter((c) => !c.hideInCompany)
-    : TABLET_CONFIGS;
+    : TABLET_CONFIGS.filter((c) => !c.onlyInCompany);
 
   function tabletTitle(cfg: TabletConfig): string {
     return companyMode && cfg.companyTitle ? cfg.companyTitle : cfg.title;
@@ -502,7 +491,7 @@ export default function FormPage() {
     if (t.wants !== "是") return sum;
     return (
       sum +
-      t.entries.reduce((s, e) => s + tabletRowPrice(c.key, e, companyMode), 0)
+      t.entries.reduce((s) => s + tabletRowPrice(c.key), 0)
     );
   }, 0);
   const totalAmount = shareAmount + tabletAmount;
@@ -643,16 +632,21 @@ export default function FormPage() {
 
     // 組合各牌位子表格資料
     const tabletPayload: Record<string, TabletEntry[]> = {};
+    // 個人／全家／公司祿位在畫面上分開，送出時合併回同一個 Ragic 子表格（quanjia）
+    const shengEntries: TabletEntry[] = [];
+
     TABLET_CONFIGS.forEach((cfg) => {
       const t = tablets[cfg.key];
-      // 公司模式下不提供的牌位一律不送出
-      if (t.wants !== "是" || (companyMode && cfg.hideInCompany)) {
-        tabletPayload[cfg.key] = [];
+      const unavailable = companyMode ? cfg.hideInCompany : cfg.onlyInCompany;
+      if (t.wants !== "是" || unavailable) {
+        if (cfg.fixedScope === undefined) tabletPayload[cfg.key] = [];
         return;
       }
-      if (companyMode && cfg.key === "quanjia") {
-        // 公司祿位無全家/個人之分，清空該欄避免送出殘留值
-        tabletPayload[cfg.key] = t.entries.map((e) => ({ ...e, scope: "" }));
+      if (cfg.fixedScope !== undefined) {
+        // scope 由設定決定（個人／全家／公司留空），不採用客人填的值
+        shengEntries.push(
+          ...t.entries.map((e) => ({ ...e, scope: cfg.fixedScope as string }))
+        );
       } else if (cfg.key === "ancestor") {
         // 超薦祖先：把「單位祖先／歷代祖先」類別前置到姓名值一起送出
         tabletPayload[cfg.key] = t.entries.map((e) => ({
@@ -663,6 +657,7 @@ export default function FormPage() {
         tabletPayload[cfg.key] = t.entries;
       }
     });
+    tabletPayload.quanjia = shengEntries;
 
     setIsSubmitting(true);
     try {
@@ -1280,7 +1275,7 @@ export default function FormPage() {
                     if (t.wants !== "是" || t.entries.length === 0) return null;
                     const n = t.entries.length;
                     const amount = t.entries.reduce(
-                      (s, e) => s + tabletRowPrice(cfg.key, e, companyMode),
+                      (s) => s + tabletRowPrice(cfg.key),
                       0
                     );
                     return (
